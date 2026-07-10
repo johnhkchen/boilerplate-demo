@@ -11,9 +11,10 @@
     "backstage:feed": "node --experimental-strip-types scripts/backstage-feed.ts",
     "test:flow": "playwright test --project=healthy",
     "test:flow:stalled": "playwright test --project=stalled",
+    "test:flow:backstage": "playwright test --project=backstage",
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "wrangler dev",
     "astro": "astro",
     "deploy": "astro build && wrangler deploy",
     "deploy:dry": "astro build && wrangler deploy --dry-run"
