@@ -8,6 +8,7 @@
     "ops:check": "node --experimental-strip-types scripts/ops-check.ts",
     "leak:check": "node --experimental-strip-types scripts/leak-check.ts",
     "integration:check": "node --experimental-strip-types scripts/integration-check.ts",
+    "backstage:feed": "node --experimental-strip-types scripts/backstage-feed.ts",
     "test:flow": "playwright test --project=healthy",
     "test:flow:stalled": "playwright test --project=stalled",
     "dev": "astro dev",
