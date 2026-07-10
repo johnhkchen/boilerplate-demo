@@ -44,7 +44,20 @@ untracked scaffolding and other tickets' unstaged edits. Caught immediately:
 re-committed only this ticket's files. Working tree's prior `M` files
 (index.astro, base.css, …) and untracked docs left untouched. Going forward:
 explicit path lists on `git add`, never `-A`.
-## Step 4 — api/receipt.ts — pending
+## Step 4 — HTTP boundary src/pages/api/receipt.ts ✅
+
+- `export const prerender = false` + `GET` handler. Reads
+  `locals.runtime.env.DEMO_SIGNING_KEY`; validates (missing/blank → 500 safe
+  shape); else `makeReceipt(key)` → 200 JSON, `content-type: application/json`.
+- **Verify** (live `astro dev`, platformProxy loaded `.dev.vars` — log:
+  "Using vars defined in .dev.vars"):
+  - `GET /api/receipt` → **200**, JSON with a `signature`; `content-type` correct.
+  - Two calls differ in `nonce` + `issuedAt` → live, not a cached file.
+  - Served signature **validates** against the real key via `verifyReceipt`, and
+    **fails** against a wrong key → the route genuinely used the server secret.
+  - Blanked the key + restarted → **500** `boundary_misconfigured` with the safe
+    detail and **no key value / no stack trace**; restored the key afterward.
+  - Note: local dev port was 4322 (4321 in use by another process).
 ## Step 5 — index.astro render — pending
 ## Step 6 — wrangler.jsonc — pending
 ## Step 7 — acceptance verification — pending
