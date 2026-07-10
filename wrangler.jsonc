@@ -25,6 +25,11 @@
   // this Worker: Cloudflare creates the DNS record and manages the edge cert, so
   // promotion/rollback (Workers versions) never touches DNS.
   "routes": [{ "pattern": "demo.b28.dev", "custom_domain": true }],
+  // Declaring `routes` would otherwise disable these two defaults. Keep the
+  // workers.dev hostname as the zone-independent Worker-health probe, and keep
+  // version preview URLs for pre-promotion smoke tests (T-004-02-02).
+  "workers_dev": true,
+  "preview_urls": true,
   "vars": {
     // Healthy by default. Local/integration runs may override this explicitly.
     "DEMO_FAULT": "off"
