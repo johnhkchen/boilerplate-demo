@@ -10,8 +10,8 @@
   // from the Playwright webServer's process env (CLOUDFLARE_INCLUDE_PROCESS_ENV).
   //
   // The BACKSTAGE_DB binding is declared here because this config REPLACES wrangler.jsonc
-  // for the emulated runtime. Local D1 state still persists under the repo-root
-  // `.wrangler/state` (cwd-based), where `wrangler d1 migrations apply --local` writes it.
+  // for the emulated runtime. Playwright applies migrations with this same config before
+  // starting Astro, ensuring a clean CI runner migrates the exact database it serves.
   // Not a deploy config.
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "demo-runway-backstage-flow",

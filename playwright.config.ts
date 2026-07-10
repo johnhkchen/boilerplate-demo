@@ -72,9 +72,9 @@ export default defineConfig({
     : {
         // Apply the D1 migration to the local store before `astro dev` takes the
         // binding's lock — race-free and idempotent (already-applied migrations are
-        // skipped) — so the backstage form's writes actually persist during the test.
+        // skipped) — using the same isolated binding config as the dev server.
         command:
-          'npx wrangler d1 migrations apply BACKSTAGE_DB --local && npm run dev -- --host 127.0.0.1 --port 4323',
+          'npx wrangler d1 migrations apply BACKSTAGE_DB --local --config tests/support/backstage.wrangler.jsonc && npm run dev -- --host 127.0.0.1 --port 4323',
         url: LOCAL_BASE_URL,
         timeout: FLOW_BUDGET_MS.serverStartup,
         reuseExistingServer: false,
@@ -87,8 +87,8 @@ export default defineConfig({
           CODEX_THREAD_ID: '',
           CLOUDFLARE_INCLUDE_PROCESS_ENV: 'true',
           // Point the emulated runtime at the isolated config so `.dev.vars` cannot
-          // override these values with machine-specific ones. The store binding lives
-          // there too; local D1 state persists under the repo-root `.wrangler/state`.
+          // override these values with machine-specific ones. The migration command
+          // above uses this same config so both processes address the same local D1.
           DEMO_WRANGLER_CONFIG_PATH: backstageWranglerConfigPath,
           DEMO_SIGNING_KEY:
             env.DEMO_SIGNING_KEY ?? 'playwright-local-test-key',

@@ -53,7 +53,20 @@ test('a stakeholder submits a reference from a phone and it lands in the store',
       // Exact match: the "A link or reference" radio's accessible name also contains "link".
       await page.getByLabel('Link', { exact: true }).fill(linkUrl);
       await page.getByLabel('Say more').fill(noteText);
+
+      const submissionPromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/backstage/entries' &&
+          response.request().method() === 'POST',
+        { timeout: FLOW_BUDGET_MS.action },
+      );
       await page.getByRole('button', { name: 'Send it over' }).click();
+      const submission = await submissionPromise;
+      const responseBody = await submission.text();
+      expect(
+        submission.status(),
+        `the submission endpoint should create the entry; response: ${responseBody}`,
+      ).toBe(201);
 
       // The form is swapped for the confirmation panel, which echoes what was sent.
       await expect(
