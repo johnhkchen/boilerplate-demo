@@ -31,6 +31,21 @@ const integrationConfigPath = process.env.DEMO_WRANGLER_CONFIG_PATH;
 
 export default defineConfig({
   output: 'static',
+  // This demo uses no server sessions (nothing reads or writes `Astro.session`).
+  // Left unset, @astrojs/cloudflare defaults sessions to a Cloudflare KV binding
+  // (`env.SESSION`), and `wrangler deploy` then tries to auto-provision that KV
+  // namespace — which fails unless the deploy token also carries Workers KV edit
+  // permission (charter P6 keeps the token least-privilege: Workers + D1 only).
+  // Pin an in-memory driver so no KV binding is emitted; since sessions are never
+  // used, the store is inert. Remove this the day the demo actually needs sessions
+  // (and grant the token KV edit + declare the namespace then).
+  //
+  // The string form is used deliberately: the object form (sessionDrivers.memory())
+  // is not in @astrojs/cloudflare's typed driver surface in this version, so it fails
+  // `astro check`, while the zero-dependency memory driver is the only one safe to
+  // bundle into the Worker. The string signature is deprecated (build-time warning
+  // only) but type-checks and works; revisit when the memory driver is typed.
+  session: { driver: 'memory' },
   adapter: cloudflare({
     // This demo has no image pipeline. Avoid provisioning an unused Images
     // binding; static assets pass through unchanged.
