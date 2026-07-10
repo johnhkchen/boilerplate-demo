@@ -1,0 +1,56 @@
+# Deploy the static site to Cloudflare on every push to main.
+#
+# This workflow is thin glue: it runs the repo's own `npm run deploy`
+# (`astro build && wrangler deploy`) — the exact command an owner runs locally —
+# so the deploy contract lives in the repository, not in this CI vendor. Moving
+# CI hosts, or deploying by hand, needs no rewrite (charter P6: sovereign).
+#
+# Required repository secrets (set once by the owner — never commit these):
+#   CLOUDFLARE_API_TOKEN   API token with the "Edit Cloudflare Workers" template.
+#   CLOUDFLARE_ACCOUNT_ID  The target Cloudflare account id.
+# Set them with:
+#   gh secret set CLOUDFLARE_API_TOKEN
+#   gh secret set CLOUDFLARE_ACCOUNT_ID
+# or in GitHub → Settings → Secrets and variables → Actions. wrangler reads both
+# from the environment automatically; no wrangler.jsonc edit is needed.
+
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Least privilege: the job only reads the repo to build and deploy. It never
+# writes back to the repository, comments, or cuts releases.
+permissions:
+  contents: read
+
+# Latest push to main wins: a newer commit supersedes an in-flight deploy so the
+# live site converges to the tip of main. Cloudflare deploys are atomic, so a
+# cancelled upload never half-publishes.
+concurrency:
+  group: deploy-cloudflare-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies (locked)
+        run: npm ci
+
+      - name: Build and deploy to Cloudflare
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
