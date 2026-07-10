@@ -19,10 +19,28 @@ import {
   parseFaultMode,
 } from '../../lib/fault';
 
+// Identify the running Worker version (id + commit tag) on every response of
+// this route. The promote/rollback scripts assert x-demo-version-id after a
+// pointer-move to prove demo.b28.dev serves the version they deployed. These
+// are headers, not body fields: the receipt's signature canonically covers
+// boundary:issuedAt:nonce, and version identity is transport metadata, not part
+// of the signed evidence. Absent outside the Workers runtime (astro dev).
+const versionHeaders = (): Record<string, string> => {
+  const meta = (env as { CF_VERSION_METADATA?: { id?: string; tag?: string } })
+    .CF_VERSION_METADATA;
+  const headers: Record<string, string> = {};
+  if (meta?.id) headers['x-demo-version-id'] = meta.id;
+  if (meta?.tag) headers['x-demo-version-tag'] = meta.tag;
+  return headers;
+};
+
 const json = (body: unknown, status: number): Response =>
   new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8' },
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      ...versionHeaders(),
+    },
   });
 
 export const GET: APIRoute = async ({ request }) => {
