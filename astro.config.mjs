@@ -21,7 +21,21 @@ import cloudflare from '@astrojs/cloudflare';
 // platformProxy surfaces wrangler's `.dev.vars` at `Astro.locals.runtime.env`
 // under `astro dev`, so the boundary reads its key the same way in dev and in the
 // deployed Worker.
+// The combined integration check owns an isolated temporary Wrangler config so
+// deliberate faults never require rewriting a developer's `.dev.vars`. Ordinary
+// dev/deploy runs leave this unset and retain the existing config + `.dev.vars`
+// behavior. This is server-side operator plumbing; it is never exposed to client
+// modules or prefixed PUBLIC_.
+const integrationConfigPath = process.env.DEMO_WRANGLER_CONFIG_PATH;
+
 export default defineConfig({
   output: 'static',
-  adapter: cloudflare({ platformProxy: { enabled: true } }),
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true,
+      ...(integrationConfigPath === undefined
+        ? {}
+        : { configPath: integrationConfigPath }),
+    },
+  }),
 });
