@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 import {
   BACKSTAGE_PASSCODE,
@@ -5,6 +6,15 @@ import {
   FLOW_PROJECT,
   LOCAL_BASE_URL,
 } from './tests/support/flow-contract';
+
+// Isolated Wrangler config for the owned dev server. It lives outside the repo root, so
+// Wrangler does NOT load the developer's repo-root `.dev.vars` (which may pin a different
+// DEMO_PASSCODE/DEMO_SIGNING_KEY); the deterministic values below come from process env
+// instead. astro.config.mjs reads DEMO_WRANGLER_CONFIG_PATH into platformProxy. Absolute so
+// it resolves regardless of Wrangler's cwd handling.
+const backstageWranglerConfigPath = fileURLToPath(
+  new URL('./tests/support/backstage.wrangler.jsonc', import.meta.url),
+);
 
 // The project intentionally has no @types/node dependency. Playwright executes
 // this file in Node, so describe only the runtime surface the config consumes.
@@ -74,12 +84,17 @@ export default defineConfig({
         env: {
           ...env,
           CLOUDFLARE_INCLUDE_PROCESS_ENV: 'true',
+          // Point the emulated runtime at the isolated config so `.dev.vars` cannot
+          // override these values with machine-specific ones. The store binding lives
+          // there too; local D1 state persists under the repo-root `.wrangler/state`.
+          DEMO_WRANGLER_CONFIG_PATH: backstageWranglerConfigPath,
           DEMO_SIGNING_KEY:
             env.DEMO_SIGNING_KEY ?? 'playwright-local-test-key',
           // The shared backstage passcode the form's submissions are gated on. Surfaced
-          // into locals.runtime.env via CLOUDFLARE_INCLUDE_PROCESS_ENV, exactly like the
-          // signing key. A local test knock, not a secret.
-          DEMO_PASSCODE: env.DEMO_PASSCODE ?? BACKSTAGE_PASSCODE,
+          // into locals.runtime.env via CLOUDFLARE_INCLUDE_PROCESS_ENV. A local test
+          // knock, not a secret. Pinned (not `?? env`) so it can never drift from the
+          // value the spec presents from the flow contract.
+          DEMO_PASSCODE: BACKSTAGE_PASSCODE,
         },
       },
 });
