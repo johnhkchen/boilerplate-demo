@@ -119,10 +119,36 @@ changed only `DEMO_FAULT`. The default overall budget was 45 seconds.
 
 ## Remaining implementation units
 
-1. Run final regression, diff, frontmatter, cleanup, port, and secret-hygiene checks.
-2. Commit ticket-owned implementation/docs paths without absorbing prerequisite
-   worktree changes.
-3. Write `review.md`.
+None. Review handoff follows in `review.md`.
+
+## Final regression and hygiene evidence
+
+- `npm test`: pass, 38/38, zero skipped/failing.
+- `npx tsc --noEmit`: pass.
+- `npm run build`: pass.
+- `npx playwright test --list`: pass, 2 tests in 1 file.
+- Final `npm run integration:check`: pass; aggregate 2.8s, measured wall 3.96s.
+- Final report contract assertion: pass (`outcome=passed`, `faultMode=off`, all
+  three normalized checks passed).
+- `git diff --check`: pass.
+- Ticket frontmatter diff: empty.
+- Port 4324 listener after run: none.
+- Temporary `demo-runway-integration-*` directories after run: none.
+- Report scan for fixture/example/diagnostic key markers: clean.
+- Final cleanup review found and fixed a readiness-error edge: `startServer` now
+  terminates its child before rethrowing if it cannot return the handle to `main`.
+- Commit `9dd962a`: process orchestration, Astro config seam, runbook, and progress.
+- Commit `c908dac`: readiness/spawn cleanup hardening.
+
+## Commit inventory
+
+1. `d408f5b` — Research and Design artifacts.
+2. `f37edf8` — Structure and Plan artifacts.
+3. `2941b88` — aggregation core, deterministic tests, initial progress.
+4. `9dd962a` — combined process edge, config seam, runbook, live evidence.
+5. `c908dac` — server cleanup hardening from Review.
+
+The final Review artifact is committed separately after creation.
 
 ## Remaining implementation units
 
