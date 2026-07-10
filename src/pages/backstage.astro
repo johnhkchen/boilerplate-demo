@@ -1,0 +1,519 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// The stakeholder backstage door (E-003). A static-first page — like index.astro it is
+// prerendered to an asset and loads instantly; the only moving part is the inline browser
+// script below, which POSTs the entry to /api/backstage/entries with the shared passcode in
+// the x-demo-passcode header. The passcode is typed by the visitor at runtime and never lives
+// in this page's source or scripts, so nothing secret is inlined (charter P3). The page view is
+// not gated — the gate is a server-side header check on the submit — because the passcode is a
+// low-stakes shared knock, not identity, and the page must stay a free static edge asset.
+
+const title = 'Backstage — pass a link or a note to the team';
+const description =
+  'A passcode-gated page where a stakeholder hands the team a reference or a bit of feedback from a phone, no account needed.';
+
+// One source of truth for the two entry types, shared by the markup and the script hint.
+const entryTypes = [
+  {
+    value: 'reference',
+    label: 'A link or reference',
+    hint: 'A page, doc, or example you want the team to look at.',
+  },
+  {
+    value: 'feedback',
+    label: 'A bit of feedback',
+    hint: 'A thought, request, or comment. A link is optional.',
+  },
+] as const;
+---
+
+<BaseLayout title={title} description={description}>
+  <main>
+    <section class="clay-surface intro" aria-labelledby="title">
+      <p class="eyebrow">You're on the list</p>
+      <h1 id="title">Backstage</h1>
+      <p class="tagline">Pass a link or a note straight to the team.</p>
+      <p class="lede">
+        Got something the team should see — a reference, an example, or a bit of
+        feedback? Drop it here with the passcode they gave you. It goes straight
+        to the people building this, no account and no sign-in.
+      </p>
+      <p class="note" role="note">
+        Heads up: that passcode is a shared knock, not a vault. Please don't paste
+        passwords, private keys, or anything secret here — hand those over a secure
+        channel instead.
+      </p>
+    </section>
+
+    <section class="clay-surface" aria-labelledby="form-heading">
+      <h2 id="form-heading">Hand it over</h2>
+
+      <form id="backstage-form" novalidate>
+        <div class="field">
+          <label for="bs-passcode">Shared passcode</label>
+          <input
+            id="bs-passcode"
+            name="passcode"
+            type="password"
+            autocomplete="off"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            required
+          />
+          <p class="help">The team handed you this along with the link.</p>
+        </div>
+
+        <fieldset class="field">
+          <legend>What are you handing us?</legend>
+          {
+            entryTypes.map((option, index) => (
+              <label class="choice">
+                <input
+                  type="radio"
+                  name="type"
+                  value={option.value}
+                  checked={index === 0}
+                />
+                <span class="choice-body">
+                  <span class="choice-label">{option.label}</span>
+                  <span class="choice-hint">{option.hint}</span>
+                </span>
+              </label>
+            ))
+          }
+        </fieldset>
+
+        <div class="field">
+          <label for="bs-url">Link</label>
+          <input
+            id="bs-url"
+            name="url"
+            type="url"
+            inputmode="url"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="https://…"
+          />
+          <p class="help" id="bs-url-help">Paste the web address for a reference.</p>
+        </div>
+
+        <div class="field">
+          <label for="bs-text">Say more</label>
+          <textarea id="bs-text" name="text" rows="5" required></textarea>
+          <p class="help">
+            What is it, and what should the team know about it?
+          </p>
+        </div>
+
+        <p id="bs-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
+
+        <button id="bs-submit" type="submit" class="clay-button">Send it over</button>
+      </form>
+
+      <section id="bs-confirm" class="clay-well confirm" aria-live="polite" hidden>
+        <h3 id="bs-confirm-heading" tabindex="-1">Got it — thanks.</h3>
+        <p class="lede">That's with the team now. Add another whenever you like.</p>
+        <dl class="confirm-body">
+          <div class="confirm-row">
+            <dt>Kind</dt>
+            <dd id="bs-confirm-type">—</dd>
+          </div>
+          <div class="confirm-row" id="bs-confirm-url-row" hidden>
+            <dt>Link</dt>
+            <dd id="bs-confirm-url" class="confirm-break">—</dd>
+          </div>
+          <div class="confirm-row">
+            <dt>What you said</dt>
+            <dd id="bs-confirm-text" class="confirm-break">—</dd>
+          </div>
+        </dl>
+        <button id="bs-again" type="button" class="clay-button">Send another</button>
+      </section>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  // Runs in the browser. The page is a static asset; this is the only moving part. It reads
+  // the fields, sends the entry to the server's write route with the passcode in a header, and
+  // swaps the form for a confirmation. No secret lives here — the passcode is the visitor's
+  // runtime input, sent only in the x-demo-passcode header, never stored or put in the URL.
+
+  // Kept in step with src/lib/backstage-submission.ts (the server is the authority; these are
+  // just friendly client-side hints so a phone user isn't bounced through a round-trip).
+  const MAX_URL = 2048;
+  const MAX_TEXT = 20_000;
+
+  const form = document.getElementById('backstage-form') as HTMLFormElement | null;
+
+  if (form) {
+    const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+    const passcode = el<HTMLInputElement>('bs-passcode')!;
+    const url = el<HTMLInputElement>('bs-url')!;
+    const text = el<HTMLTextAreaElement>('bs-text')!;
+    const urlHelp = el<HTMLParagraphElement>('bs-url-help')!;
+    const errorEl = el<HTMLParagraphElement>('bs-error')!;
+    const submit = el<HTMLButtonElement>('bs-submit')!;
+    const confirm = el<HTMLElement>('bs-confirm')!;
+    const again = el<HTMLButtonElement>('bs-again')!;
+
+    const selectedType = (): string => {
+      const picked = form.querySelector<HTMLInputElement>('input[name="type"]:checked');
+      return picked ? picked.value : 'reference';
+    };
+
+    // The link is required for a reference and optional for feedback; keep the helper honest.
+    const syncUrlHelp = () => {
+      urlHelp.textContent =
+        selectedType() === 'reference'
+          ? 'Paste the web address for a reference.'
+          : 'A link is optional for feedback.';
+    };
+    for (const radio of form.querySelectorAll('input[name="type"]')) {
+      radio.addEventListener('change', syncUrlHelp);
+    }
+    syncUrlHelp();
+
+    const showError = (message: string, focus: HTMLElement) => {
+      errorEl.textContent = message;
+      errorEl.hidden = false;
+      focus.focus();
+    };
+    const clearError = () => {
+      errorEl.hidden = true;
+      errorEl.textContent = '';
+    };
+
+    const isWebUrl = (value: string): boolean => {
+      try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearError();
+
+      const passcodeValue = passcode.value;
+      const type = selectedType();
+      const urlValue = url.value.trim();
+      const textValue = text.value;
+
+      // Friendly, server-mirroring checks. The server re-validates everything regardless.
+      if (passcodeValue.trim() === '') {
+        showError('Pop in the passcode the team gave you.', passcode);
+        return;
+      }
+      if (textValue.trim() === '') {
+        showError('Add a line or two so the team knows what this is.', text);
+        return;
+      }
+      if (textValue.length > MAX_TEXT) {
+        showError('That note is a bit long — trim it down and try again.', text);
+        return;
+      }
+      if (urlValue !== '' && (urlValue.length > MAX_URL || !isWebUrl(urlValue))) {
+        showError('That link should be a web address starting with http.', url);
+        return;
+      }
+      if (type === 'reference' && urlValue === '') {
+        showError('A reference needs a link — paste the web address.', url);
+        return;
+      }
+
+      const original = submit.textContent;
+      submit.disabled = true;
+      submit.textContent = 'Sending…';
+
+      try {
+        // Exactly the three fields the route accepts; submittedAt is stamped by the server.
+        const res = await fetch('/api/backstage/entries', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-demo-passcode': passcodeValue,
+          },
+          body: JSON.stringify({ type, url: urlValue, text: textValue }),
+        });
+
+        if (res.status === 201) {
+          const { entry } = await res.json();
+          const setText = (id: string, value: string) => {
+            const node = document.getElementById(id);
+            if (node) node.textContent = value;
+          };
+          setText(
+            'bs-confirm-type',
+            entry.type === 'reference' ? 'A link or reference' : 'A bit of feedback',
+          );
+          const urlRow = document.getElementById('bs-confirm-url-row');
+          if (entry.url) {
+            setText('bs-confirm-url', entry.url);
+            if (urlRow) urlRow.hidden = false;
+          } else if (urlRow) {
+            urlRow.hidden = true;
+          }
+          setText('bs-confirm-text', entry.text);
+
+          form.hidden = true;
+          confirm.hidden = false;
+          document.getElementById('bs-confirm-heading')?.focus();
+          return;
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          showError("That passcode didn't work — check it with the team and try again.", passcode);
+        } else if (res.status === 422) {
+          const body = await res.json().catch(() => null);
+          const issues = Array.isArray(body?.issues) ? body.issues.join(' ') : '';
+          showError(
+            issues === ''
+              ? "That didn't go through — give it another look and resend."
+              : `That didn't go through: ${issues}`,
+            text,
+          );
+        } else {
+          showError("The server couldn't take it just now — give it a moment and resend.", submit);
+        }
+      } catch {
+        showError("Couldn't reach the server just now — check your connection and resend.", submit);
+      } finally {
+        submit.disabled = false;
+        submit.textContent = original;
+      }
+    });
+
+    // "Send another": keep the passcode in the field (in memory only), clear the entry.
+    again.addEventListener('click', () => {
+      clearError();
+      url.value = '';
+      text.value = '';
+      confirm.hidden = true;
+      form.hidden = false;
+      syncUrlHelp();
+      text.focus();
+    });
+  }
+</script>
+
+<style>
+  /* Page-specific styling only. INVARIANT (matches base.css / index.astro): every color,
+     radius, shadow, font, and space resolves from a token via var(--…); no literals except the
+     1px control hairline. Retheme happens in tokens.css, never here. */
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+  }
+
+  .clay-surface {
+    max-width: var(--measure);
+    width: 100%;
+    margin-inline: auto;
+    padding: clamp(var(--space-lg), 5vw, var(--space-xl));
+  }
+
+  .eyebrow {
+    margin: 0 0 var(--space-xs);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2xs);
+    font-weight: 600;
+    font-size: var(--text-3xl);
+  }
+
+  h2 {
+    margin: 0 0 var(--space-md);
+    font-weight: 600;
+    font-size: var(--text-2xl);
+  }
+
+  .tagline {
+    margin: 0 0 var(--space-md);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-accent);
+  }
+
+  .lede {
+    margin: 0;
+    font-size: var(--text-base);
+    color: var(--color-text-soft);
+  }
+
+  /* Honest security-level line — a calm inset well, not an alarm. */
+  .note {
+    margin: var(--space-md) 0 0;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-inset);
+    font-size: var(--text-sm);
+    color: var(--color-text-soft);
+  }
+
+  /* --- Form ---------------------------------------------------------------- */
+  form {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    border: none; /* reset for <fieldset> */
+  }
+
+  label,
+  legend {
+    padding: 0;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .help {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-soft);
+  }
+
+  /* Inputs and textarea read as pressed-in wells (the clay counterpart of the raised card).
+     min-height meets the 44px touch target (P3) via the shared control token. */
+  input[type='password'],
+  input[type='url'],
+  textarea {
+    width: 100%;
+    min-height: var(--control-height);
+    padding: var(--space-2xs) var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-inset);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--control-font);
+    line-height: var(--leading-normal);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: calc(var(--control-height) * 2.5);
+  }
+
+  /* Radios: each choice is a full-width tappable row with a comfortable target. */
+  .choice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    min-height: var(--control-height);
+    padding: var(--space-2xs) 0;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .choice input[type='radio'] {
+    width: var(--space-md);
+    height: var(--space-md);
+    margin-top: var(--space-3xs);
+    accent-color: var(--color-accent);
+    flex: none;
+  }
+
+  .choice-body {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .choice-label {
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .choice-hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-soft);
+  }
+
+  .form-error {
+    margin: 0;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-inset);
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .clay-button {
+    justify-self: start;
+  }
+
+  /* --- Confirmation -------------------------------------------------------- */
+  .confirm {
+    margin-top: var(--space-md);
+    padding: clamp(var(--space-md), 4vw, var(--space-lg));
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .confirm h3 {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: 600;
+  }
+
+  .confirm .lede {
+    margin: 0;
+  }
+
+  .confirm-body {
+    margin: 0;
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .confirm-row {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .confirm-body dt {
+    margin: 0;
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  .confirm-body dd {
+    margin: 0;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  /* Long links / notes never blow out a narrow phone viewport. */
+  .confirm-break {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+</style>
