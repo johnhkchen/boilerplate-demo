@@ -15,11 +15,24 @@
   // environment / CI secret (T-001-01-03). Keeping this file account-agnostic
   // and secret-free keeps the project sovereign and transferable (charter P6).
   //
+  // Backstage entries use D1 rather than KV because they form a fixed, structured
+  // append-and-retrieve feed: D1 enforces the two entry types and returns every
+  // field in one deterministically ordered query, while KV would require key/list/
+  // value composition and a fresh write may be invisible in another location for
+  // roughly a minute. Wrangler provisions this binding into the deploying
+  // project's own account, preserving an account-agnostic, transferable template.
+  //
   // Deploy: `npm run deploy` (astro build && wrangler deploy).
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "demo-runway",
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./dist/_worker.js/index.js",
+  "d1_databases": [
+    {
+      "binding": "BACKSTAGE_DB",
+      "migrations_dir": "./migrations"
+    }
+  ],
   "assets": { "directory": "./dist", "binding": "ASSETS" }
 }
