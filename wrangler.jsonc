@@ -27,12 +27,26 @@
   "name": "demo-runway",
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "./dist/_worker.js/index.js",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "vars": {
+    // Healthy by default. Local/integration runs may override this explicitly.
+    "DEMO_FAULT": "off"
+  },
+  "secrets": {
+    // Declares the runtime contract without storing values in this repository.
+    // Wrangler validates these in local development and generates stable Env types.
+    "required": ["DEMO_SIGNING_KEY", "DEMO_PASSCODE"]
+  },
   "d1_databases": [
     {
       "binding": "BACKSTAGE_DB",
       "migrations_dir": "./migrations"
     }
   ],
-  "assets": { "directory": "./dist", "binding": "ASSETS" }
+  "assets": { "directory": "./dist", "binding": "ASSETS" },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+  }
 }

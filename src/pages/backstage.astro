@@ -231,6 +231,23 @@ const entryTypes = [
       submit.disabled = true;
       submit.textContent = 'Sending…';
 
+      const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null;
+
+      const isEntryResponse = (
+        value: unknown,
+      ): value is {
+        entry: { type: 'reference' | 'feedback'; url: string; text: string };
+      } => {
+        if (!isRecord(value) || !isRecord(value.entry)) return false;
+        const entry = value.entry;
+        return (
+          (entry.type === 'reference' || entry.type === 'feedback') &&
+          typeof entry.url === 'string' &&
+          typeof entry.text === 'string'
+        );
+      };
+
       try {
         // Exactly the three fields the route accepts; submittedAt is stamped by the server.
         const res = await fetch('/api/backstage/entries', {
@@ -243,7 +260,9 @@ const entryTypes = [
         });
 
         if (res.status === 201) {
-          const { entry } = await res.json();
+          const body: unknown = await res.json();
+          if (!isEntryResponse(body)) throw new Error('unexpected entry response');
+          const { entry } = body;
           const setText = (id: string, value: string) => {
             const node = document.getElementById(id);
             if (node) node.textContent = value;
@@ -270,8 +289,13 @@ const entryTypes = [
         if (res.status === 401 || res.status === 403) {
           showError("That passcode didn't work — check it with the team and try again.", passcode);
         } else if (res.status === 422) {
-          const body = await res.json().catch(() => null);
-          const issues = Array.isArray(body?.issues) ? body.issues.join(' ') : '';
+          const body: unknown = await res.json().catch(() => null);
+          const issues =
+            isRecord(body) &&
+            Array.isArray(body.issues) &&
+            body.issues.every((issue): issue is string => typeof issue === 'string')
+              ? body.issues.join(' ')
+              : '';
           showError(
             issues === ''
               ? "That didn't go through — give it another look and resend."

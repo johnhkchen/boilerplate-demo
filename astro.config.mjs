@@ -18,24 +18,25 @@ import cloudflare from '@astrojs/cloudflare';
 // comment noted: product-spec calls for a Cloudflare adapter and secret-safe
 // server endpoint boundaries; T-002-01-02 is that need.)
 //
-// platformProxy surfaces wrangler's `.dev.vars` at `Astro.locals.runtime.env`
-// under `astro dev`, so the boundary reads its key the same way in dev and in the
-// deployed Worker.
+// Astro 7's Cloudflare Vite plugin runs development in workerd. Routes import
+// bindings directly from `cloudflare:workers`, so `.dev.vars`, D1, and production
+// Worker bindings share the same runtime access path.
 // The combined integration check owns an isolated temporary Wrangler config so
 // deliberate faults never require rewriting a developer's `.dev.vars`. Ordinary
 // dev/deploy runs leave this unset and retain the existing config + `.dev.vars`
-// behavior. This is server-side operator plumbing; it is never exposed to client
-// modules or prefixed PUBLIC_.
+// behavior. The adapter's `configPath` option selects that isolated config. This
+// is server-side operator plumbing; it is never exposed to client modules or
+// prefixed PUBLIC_.
 const integrationConfigPath = process.env.DEMO_WRANGLER_CONFIG_PATH;
 
 export default defineConfig({
   output: 'static',
   adapter: cloudflare({
-    platformProxy: {
-      enabled: true,
-      ...(integrationConfigPath === undefined
-        ? {}
-        : { configPath: integrationConfigPath }),
-    },
+    // This demo has no image pipeline. Avoid provisioning an unused Images
+    // binding; static assets pass through unchanged.
+    imageService: 'passthrough',
+    ...(integrationConfigPath === undefined
+      ? {}
+      : { configPath: integrationConfigPath }),
   }),
 });

@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.0.1",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs",
     "ops:check": "node --experimental-strip-types scripts/ops-check.ts",
@@ -12,6 +15,10 @@
     "test:flow": "playwright test --project=healthy",
     "test:flow:stalled": "playwright test --project=stalled",
     "test:flow:backstage": "playwright test --project=backstage",
+    "worker:types": "wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false",
+    "worker:types:check": "wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false --check",
+    "typecheck": "astro check && tsc --noEmit && npm run worker:types:check",
+    "verify": "npm test && npm run typecheck && npm run integration:check && npm run test:flow:backstage && npm run deploy:dry",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "wrangler dev",
@@ -20,10 +27,13 @@
     "deploy:dry": "astro build && wrangler deploy --dry-run"
   },
   "devDependencies": {
-    "@astrojs/cloudflare": "^12.6.13",
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/cloudflare": "^14.1.2",
+    "@cloudflare/workers-types": "^5.20260710.1",
     "@playwright/test": "^1.61.1",
-    "@types/node": "^22.19.7",
-    "astro": "^5.13.0",
-    "wrangler": "^4"
+    "@types/node": "^26.1.1",
+    "astro": "^7.0.7",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.110.0"
   }
 }

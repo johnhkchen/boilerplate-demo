@@ -16,13 +16,12 @@ const backstageWranglerConfigPath = fileURLToPath(
   new URL('./tests/support/backstage.wrangler.jsonc', import.meta.url),
 );
 
-// The project intentionally has no @types/node dependency. Playwright executes
-// this file in Node, so describe only the runtime surface the config consumes.
-const env = (
-  globalThis as typeof globalThis & {
-    process: { env: Record<string, string> };
-  }
-).process.env;
+// Playwright's webServer expects defined string values. Drop any unset process
+// variables before forwarding the environment to the owned dev server.
+const env = Object.fromEntries(
+  Object.entries(process.env).filter((entry): entry is [string, string] =>
+    entry[1] !== undefined),
+);
 
 const externalBaseURL = env.PLAYWRIGHT_BASE_URL;
 const baseURL = externalBaseURL ?? LOCAL_BASE_URL;
@@ -83,6 +82,9 @@ export default defineConfig({
         stderr: 'pipe',
         env: {
           ...env,
+          // Astro 7 daemonizes dev servers for detected coding agents. Playwright
+          // needs the process to remain in the foreground so it can own cleanup.
+          CODEX_THREAD_ID: '',
           CLOUDFLARE_INCLUDE_PROCESS_ENV: 'true',
           // Point the emulated runtime at the isolated config so `.dev.vars` cannot
           // override these values with machine-specific ones. The store binding lives

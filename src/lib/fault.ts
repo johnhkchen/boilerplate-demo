@@ -9,7 +9,7 @@ import type { Receipt } from './receipt.ts';
 
 // The three states the boundary can be put in. 'off' is the healthy default: a
 // signed receipt, exactly as if the toggle did not exist.
-export type FaultMode = 'off' | 'broken' | 'stalled';
+export type FaultMode = 'off' | 'broken' | 'stalled' | 'leak';
 
 // The environment variable an operator flips. Named here so the route and the docs
 // share one source of truth and cannot drift.
@@ -22,7 +22,20 @@ export const FAULT_ENV = 'DEMO_FAULT';
 export function parseFaultMode(raw: string | null | undefined): FaultMode {
   if (typeof raw !== 'string') return 'off';
   const v = raw.trim().toLowerCase();
-  return v === 'broken' || v === 'stalled' ? v : 'off';
+  return v === 'broken' || v === 'stalled' || v === 'leak' ? v : 'off';
+}
+
+// Deliberately unsafe response shape for the executable leak assertion. This is
+// reachable only when an operator explicitly selects DEMO_FAULT=leak. Keeping the
+// transform pure lets tests prove the checker sees the *actual configured key*
+// without making healthy receipt construction aware of fault behavior.
+export type LeakingReceipt = Receipt & { diagnosticSigningKey: string };
+
+export function leakSigningKey(
+  receipt: Receipt,
+  key: string,
+): LeakingReceipt {
+  return { ...receipt, diagnosticSigningKey: key };
 }
 
 // Map a lowercase hex digit d to (15 - d): 0<->f, 1<->e, …, 7<->8. Since 15 - d is

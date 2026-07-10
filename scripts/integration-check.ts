@@ -186,6 +186,7 @@ async function createTemporaryConfig(
     JSON.stringify(
       {
         name: 'demo-runway-integration-check',
+        main: '@astrojs/cloudflare/entrypoints/server',
         compatibility_date: '2026-07-10',
         compatibility_flags: ['nodejs_compat'],
         vars,
@@ -254,7 +255,14 @@ async function startServer(
     ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(config.port)],
     {
       cwd: process.cwd(),
-      env: { ...process.env, [CONFIG_PATH_ENV]: configPath },
+      env: {
+        ...process.env,
+        [CONFIG_PATH_ENV]: configPath,
+        // Astro 7 automatically daemonizes `astro dev` when it detects a coding
+        // agent. This check owns and must terminate a foreground child, so hide
+        // the Codex marker from this one subprocess.
+        CODEX_THREAD_ID: '',
+      },
       shell: false,
       detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],

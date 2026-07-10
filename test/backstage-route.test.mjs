@@ -6,8 +6,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { listEntries } from '../src/lib/backstage-store.ts';
+import { handleBackstageEntry } from '../src/lib/backstage-route.ts';
 import { PASSCODE_HEADER } from '../src/lib/passcode.ts';
-import { POST } from '../src/pages/api/backstage/entries.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATION_SQL = readFileSync(
@@ -60,16 +60,9 @@ function postRequest(body, options = {}) {
 }
 
 function hitRoute(store, request, configured = SECRET) {
-  return POST({
-    request,
-    locals: {
-      runtime: {
-        env: {
-          DEMO_PASSCODE: configured,
-          ...(store === undefined ? {} : { BACKSTAGE_DB: store }),
-        },
-      },
-    },
+  return handleBackstageEntry(request, {
+    DEMO_PASSCODE: configured,
+    ...(store === undefined ? {} : { BACKSTAGE_DB: store }),
   });
 }
 

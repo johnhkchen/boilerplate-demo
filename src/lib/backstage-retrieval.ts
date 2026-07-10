@@ -3,8 +3,8 @@
 // submit route, T-003-02-01). Pure and framework-free like receipt.ts / passcode.ts /
 // backstage-store.ts: the core reads no env and holds no secret. It takes its three
 // dependencies as arguments — the presented request, the configured (server) passcode,
-// and the D1 handle — and the thin HTTP edge (src/pages/api/backstage/feed.ts) owns
-// `Astro.locals.runtime.env` and passes them in.
+// and the D1 handle — and the thin HTTP edge (src/pages/api/backstage/feed.ts) imports
+// Cloudflare's runtime env and passes them in.
 //
 // It composes two done modules rather than reimplementing them:
 //   * passcode.ts `guardPasscode` — the shared low-stakes gate. Returning its denial

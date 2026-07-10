@@ -1,7 +1,7 @@
 // The write/list data layer for backstage entries, kept pure and framework-free like
 // receipt.ts / passcode.ts / operation-runner.ts: the core takes its dependency — the
 // D1 database handle — as an argument and never imports Astro, Cloudflare, or reads
-// env. The HTTP edge (T-003-02-01) owns `Astro.locals.runtime.env.BACKSTAGE_DB` and
+// env. The HTTP edge (T-003-02-01) owns Cloudflare's `env.BACKSTAGE_DB` binding and
 // passes it in, so this module stays unit-testable against any store that speaks the
 // small D1 surface below.
 //
@@ -16,9 +16,8 @@ import type { BackstageEntry, BackstageEntryType } from './backstage-entry.ts';
 // assignable to `EntryStoreDatabase` (it has `prepare`; its statement has `bind`/`run`/
 // `all`, and `bind` returns the same statement), so production passes the binding in
 // with no cast — while tests can supply an in-process store implementing the same shape.
-// Defined here, in the repo idiom of libraries owning their own minimal types, because
-// the global `D1Database` type is only present when @cloudflare/workers-types is
-// installed (it is not). `src/env.d.ts` types the BACKSTAGE_DB binding via this shape.
+// Defined here so the library and its Node/SQLite tests depend only on the small
+// surface they use. The generated CloudflareEnv still exposes the full D1Database.
 export interface EntryStoreStatement {
   bind(...values: unknown[]): EntryStoreStatement;
   run(): Promise<unknown>;

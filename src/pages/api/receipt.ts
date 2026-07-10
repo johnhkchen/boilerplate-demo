@@ -3,15 +3,21 @@
 // astro.config.mjs) — every other route stays a static asset with no cold start.
 //
 // It reads a server-only signing key from the runtime environment and returns a
-// freshly signed receipt. The key is read via `locals.runtime.env` (fed by
-// `.dev.vars` in dev through platformProxy, by a Worker secret in production) and
+// freshly signed receipt. The key is imported from Cloudflare's runtime env (fed
+// by `.dev.vars` in dev and by a Worker secret in production) and
 // is never PUBLIC_-prefixed, logged, interpolated into a response, or bundled into
 // client output — so it stays out of the browser (charter P3).
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { env } from 'cloudflare:workers';
 import { BOUNDARY_NAME, makeReceipt } from '../../lib/receipt';
-import { FAULT_ENV, corruptSignature, parseFaultMode } from '../../lib/fault';
+import {
+  FAULT_ENV,
+  corruptSignature,
+  leakSigningKey,
+  parseFaultMode,
+} from '../../lib/fault';
 
 const json = (body: unknown, status: number): Response =>
   new Response(JSON.stringify(body, null, 2), {
@@ -19,9 +25,8 @@ const json = (body: unknown, status: number): Response =>
     headers: { 'content-type': 'application/json; charset=utf-8' },
   });
 
-export const GET: APIRoute = async ({ locals, request }) => {
-  const env = locals.runtime?.env;
-  const key = env?.DEMO_SIGNING_KEY;
+export const GET: APIRoute = async ({ request }) => {
+  const key = env.DEMO_SIGNING_KEY;
 
   // Environment validation (product-spec: "environment validation"). A missing or
   // blank key is a misconfiguration, not a client error — fail explicitly with a
@@ -43,7 +48,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
   // from the runtime env exactly like the key; unset/unknown → healthy (see
   // parseFaultMode). The ops-check (scripts/ops-check.ts) then catches each state
   // without any change to how it is invoked.
-  const fault = parseFaultMode(env?.[FAULT_ENV]);
+  const fault = parseFaultMode(env[FAULT_ENV]);
 
   // stalled: never answer. Settle only when the client gives up, so the ops-check's
   // own time budget bounds the wait (it aborts the fetch, which aborts this signal)
@@ -64,6 +69,13 @@ export const GET: APIRoute = async ({ locals, request }) => {
   // key. A naive "did it return 200?" check passes it; the ops-check rejects it.
   if (fault === 'broken') {
     return json(corruptSignature(receipt), 200);
+  }
+
+  // leak: deliberately put the real configured key in an otherwise successful
+  // response. This unsafe branch is the executable negative case for leak:check;
+  // it is never entered unless the server operator explicitly selects it.
+  if (fault === 'leak') {
+    return json(leakSigningKey(receipt, key), 200);
   }
 
   return json(receipt, 200);

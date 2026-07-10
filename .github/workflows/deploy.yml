@@ -49,6 +49,12 @@ jobs:
       - name: Install dependencies (locked)
         run: npm ci
 
+      - name: Install browser used by the bounded demo checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify unit, type, browser, leak, and deploy contracts
+        run: npm run verify
+
       - name: Build and deploy to Cloudflare
         run: npm run deploy
         env:

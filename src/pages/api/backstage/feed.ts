@@ -7,18 +7,18 @@
 // runs server-side on each request (astro.config.mjs is output:'static'; only /api/* invokes
 // the Worker). This edge owns env and Response; all logic lives in the pure core
 // (src/lib/backstage-retrieval.ts). The passcode and the D1 binding arrive on
-// `locals.runtime.env` — from `.dev.vars` in dev via platformProxy, from a Worker secret /
+// Cloudflare's runtime env — from `.dev.vars` in dev, from a Worker secret /
 // binding in production — and neither is PUBLIC_-prefixed, so neither reaches client output.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { env } from 'cloudflare:workers';
 import { readBackstageFeed } from '../../../lib/backstage-retrieval';
 
-export const GET: APIRoute = ({ locals, request }) => {
-  const env = locals.runtime?.env;
+export const GET: APIRoute = ({ request }) => {
   return readBackstageFeed({
     request,
-    configured: env?.DEMO_PASSCODE,
-    db: env?.BACKSTAGE_DB,
+    configured: env.DEMO_PASSCODE,
+    db: env.BACKSTAGE_DB,
   });
 };

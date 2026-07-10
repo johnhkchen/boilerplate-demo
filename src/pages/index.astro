@@ -66,10 +66,27 @@ const description =
     if (el) el.textContent = value;
   };
 
+  interface ReceiptPayload {
+    issuedAt: string;
+    nonce: string;
+    signature: string;
+  }
+
+  const isReceiptPayload = (value: unknown): value is ReceiptPayload => {
+    if (typeof value !== 'object' || value === null) return false;
+    const candidate = value as Record<string, unknown>;
+    return (
+      typeof candidate.issuedAt === 'string' &&
+      typeof candidate.nonce === 'string' &&
+      typeof candidate.signature === 'string'
+    );
+  };
+
   try {
     const res = await fetch('/api/receipt', { headers: { accept: 'application/json' } });
     if (!res.ok) throw new Error(`server answered ${res.status}`);
-    const receipt = await res.json();
+    const receipt: unknown = await res.json();
+    if (!isReceiptPayload(receipt)) throw new Error('unexpected receipt response');
     set('receipt-issued', new Date(receipt.issuedAt).toLocaleString());
     set('receipt-nonce', receipt.nonce);
     set('receipt-signature', receipt.signature);

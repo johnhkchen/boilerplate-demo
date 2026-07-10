@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { parseFaultMode, corruptSignature } from '../src/lib/fault.ts';
+import {
+  parseFaultMode,
+  corruptSignature,
+  leakSigningKey,
+} from '../src/lib/fault.ts';
 import { makeReceipt, verifyReceipt, BOUNDARY_NAME } from '../src/lib/receipt.ts';
 import { runBoundaryCheck } from '../src/lib/ops-check.ts';
 
@@ -21,12 +25,26 @@ test('parseFaultMode: unset / empty / whitespace / unknown all fall safe to off'
   }
 });
 
-test('parseFaultMode: the two fault words are recognized, case- and space-tolerant', () => {
+test('parseFaultMode: fault words are recognized, case- and space-tolerant', () => {
   assert.equal(parseFaultMode('broken'), 'broken');
   assert.equal(parseFaultMode('BROKEN'), 'broken');
   assert.equal(parseFaultMode('  Broken '), 'broken');
   assert.equal(parseFaultMode('stalled'), 'stalled');
   assert.equal(parseFaultMode(' STALLED'), 'stalled');
+  assert.equal(parseFaultMode('leak'), 'leak');
+  assert.equal(parseFaultMode(' LEAK '), 'leak');
+  assert.equal(parseFaultMode('leaky'), 'off');
+});
+
+test('leakSigningKey: only the deliberate copy contains the actual configured key', async () => {
+  const receipt = await makeReceipt(KEY);
+  const leaking = leakSigningKey(receipt, KEY);
+
+  assert.equal(JSON.stringify(receipt).includes(KEY), false);
+  assert.equal(leaking.diagnosticSigningKey, KEY);
+  assert.equal(JSON.stringify(leaking).includes(KEY), true);
+  assert.equal('diagnosticSigningKey' in receipt, false);
+  assert.equal(leaking.signature, receipt.signature);
 });
 
 test('corruptSignature: same-length hex, different value, and no longer verifies', async () => {

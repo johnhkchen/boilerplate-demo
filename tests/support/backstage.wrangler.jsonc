@@ -15,8 +15,13 @@
   // Not a deploy config.
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "demo-runway-backstage-flow",
+  "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": { "DEMO_FAULT": "off" },
+  "secrets": {
+    "required": ["DEMO_SIGNING_KEY", "DEMO_PASSCODE"]
+  },
   "d1_databases": [
     {
       "binding": "BACKSTAGE_DB",

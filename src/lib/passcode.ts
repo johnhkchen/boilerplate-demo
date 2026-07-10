@@ -86,7 +86,7 @@ export function checkPasscode(
 export function describeDecision(
   decision: GateDecision,
 ): { error: string; detail: string } {
-  if (decision.allowed) {
+  if (!('reason' in decision)) {
     // Not a denial — no body to describe. Kept total for callers that pass any decision.
     return { error: 'ok', detail: 'passcode accepted' };
   }
@@ -118,7 +118,7 @@ export function guardPasscode(
   configured: string | null | undefined,
 ): Response | null {
   const decision = checkPasscode(configured, passcodeFromHeaders(request.headers));
-  if (decision.allowed) return null;
+  if (!('status' in decision)) return null;
 
   const body = { gate: GATE_NAME, ...describeDecision(decision) };
   return new Response(JSON.stringify(body, null, 2), {
