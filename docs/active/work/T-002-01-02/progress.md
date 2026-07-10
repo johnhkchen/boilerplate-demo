@@ -85,5 +85,37 @@ explicit path lists on `git add`, never `-A`.
 A parallel Lisa thread committed T-001-02-02 (`31a214a`, `5614cfd`) on this shared
 branch mid-session, committing the previously-uncommitted `src/` edits. Verified
 my four commits touched only this ticket's files; no entanglement.
-## Step 6 — wrangler.jsonc — pending
-## Step 7 — acceptance verification — pending
+## Step 6 — deploy wiring wrangler.jsonc (+ public/.assetsignore) ✅
+
+- `wrangler.jsonc`: added `"main": "./dist/_worker.js/index.js"`,
+  `"compatibility_flags": ["nodejs_compat"]`, and `assets.binding: "ASSETS"`;
+  rewrote the header comment (edge assets + Worker only for `_routes.json` paths).
+- **Deviation / discovery:** `wrangler deploy --dry-run` errored — the adapter
+  emits a Pages-style `_worker.js/` directory *inside* the assets dir, which
+  wrangler would upload as public assets (exposing Worker source). Fix: an
+  `.assetsignore` listing `_worker.js` + `_routes.json`. Since `dist/` is
+  gitignored and rebuilt, put it in **`public/.assetsignore`** — Astro copies
+  `public/` into `dist/` on every build, so it travels with each build with no
+  package.json/deploy-script change (kept T-001-01-02/03's scripts untouched).
+- **Verify:** rebuild → `dist/.assetsignore` present; `wrangler deploy --dry-run`
+  succeeds (only `env.ASSETS` binding; Worker deploys via `main`).
+
+## Step 7 — full acceptance verification ✅
+
+Ran against BOTH `astro dev` and a **production build served by the real Worker
+runtime** (`wrangler dev`, which loaded `DEMO_SIGNING_KEY` from `.dev.vars`,
+shown "(hidden)"):
+
+1. **Live JSON (clause 1):** `curl /api/receipt` → 200 signed JSON; nonce/issuedAt
+   differ per call. ✓ (both dev and prod build)
+2. **Key server-only (clause 2):** the served signature **validates** against the
+   real key via `verifyReceipt` and **fails** against a wrong key → the route
+   genuinely consumed the server secret. ✓
+3. **Key absent from client assets (clause 3):** `grep -rIF "$KEY" dist/` → empty;
+   no `PUBLIC_` vars; distinctive marker absent. ✓
+4. **Page static, no cold start (clause 4):** `dist/index.html` is prerendered
+   HTML; `dist/_routes.json` excludes `/` (served from assets, Worker not
+   invoked); real Worker serves `GET /` as static `text/html` 200. ✓
+5. **Page renders the value (AC):** headless Chromium shows the card populated with
+   the live signed values; `page-render.png` saved. ✓
+6. **Misconfig safety:** blank key → 500 `boundary_misconfigured`, no value/stack. ✓

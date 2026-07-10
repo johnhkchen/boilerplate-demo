@@ -1,7 +1,14 @@
 {
-  // Cloudflare Workers Static Assets. No `main` entry → this is an assets-only
-  // Worker: the Worker runtime is never invoked for asset requests, so the
-  // public page is delivered from Cloudflare's edge with no compute cold start.
+  // Cloudflare Workers Static Assets + one on-demand route. `main` points at the
+  // Worker the Astro Cloudflare adapter emits (T-002-01-02). This is NOT a return
+  // to always-on compute: Cloudflare serves every static asset (incl. `/`)
+  // straight from the edge with no cold start, and the adapter's generated
+  // `dist/_routes.json` excludes those paths from the Worker. The Worker runs only
+  // for the paths it includes — `/api/*`, i.e. the single secret-holding boundary.
+  //
+  // The signing key is NOT here. Set it as a Worker secret at deploy time:
+  //   npx wrangler secret put DEMO_SIGNING_KEY
+  // Locally it comes from `.dev.vars` (gitignored; template is .dev.vars.example).
   //
   // No `account_id` and no tokens live here. The account is supplied at deploy
   // time via `wrangler login` or CLOUDFLARE_ACCOUNT_ID; the API token via
@@ -12,5 +19,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "demo-runway",
   "compatibility_date": "2026-07-10",
-  "assets": { "directory": "./dist" }
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./dist/_worker.js/index.js",
+  "assets": { "directory": "./dist", "binding": "ASSETS" }
 }

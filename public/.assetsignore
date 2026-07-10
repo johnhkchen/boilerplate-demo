@@ -1,0 +1,6 @@
+# Keep the adapter Worker + its route manifest OFF the public asset CDN.
+# main (wrangler.jsonc) deploys _worker.js as the Worker itself; these two must
+# not also be uploaded as fetchable static files. Astro copies public/ into dist/
+# on every build, so this travels with each build automatically.
+_worker.js
+_routes.json
