@@ -1,0 +1,31 @@
+# Lisa project configuration
+version = "0.4.0-rc.1"
+
+[dirs]
+tickets = "docs/active/tickets"
+stories = "docs/active/stories"
+work = "docs/active/work"
+
+[agent]
+# Which agent client the loop drives (default: claude). Set to "codex" to run
+# the Codex client; `lisa doctor` then checks the codex binary + directory trust.
+# client = "claude"
+
+[scheduling]
+max_threads = 2
+# auto_advance = false
+# review_timeout_secs = 600
+# session_timeout_secs = 3600
+# wind_down_secs = 300
+
+# [scheduling.phase_timeouts]
+# research = 300
+# design = 300
+# implement = 1800
+
+# Optional per-provider concurrency sub-caps (within the global max_threads
+# ceiling). Useful when mixing providers so one provider's rate-limit pool
+# isn't saturated. Omit for a single global cap.
+# [scheduling.provider_caps]
+# claude = 8
+# codex = 8
