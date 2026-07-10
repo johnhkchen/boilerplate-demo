@@ -82,11 +82,13 @@ export function parseRollbackArgs(argv: string[]): RollbackArgs | UsageError {
 // ---------------------------------------------------------------------------
 // Refusal rules: what may be dirty when promoting.
 //
-// Any tracked modification means the tree is not the named commit — always
-// blocking. Untracked files block only where they can reach the build
-// (build-input directories, or the repo root, where config lives); untracked
-// files elsewhere (docs/, .lisa/ — a working Lisa checkout always has some)
-// are surfaced as warnings, not refusals.
+// The promise the record makes is that the ARTIFACT was built from the named
+// commit, so cleanliness is judged by whether a change can reach the build:
+// anything touching build-input directories or the repo root (where config
+// lives) blocks, tracked or untracked alike. Changes elsewhere (docs/,
+// .lisa/ — a working Lisa checkout always carries some) are surfaced as
+// warnings, not refusals; refusing on them would make promote unusable from
+// the checkout Lisa actually works in.
 
 export interface TreeStatus {
   blocking: string[];
@@ -102,23 +104,20 @@ const BUILD_INPUT_PREFIXES = [
   'migrations/',
 ];
 
+const canReachBuild = (path: string): boolean =>
+  !path.includes('/') || // repo root: config lives here
+  BUILD_INPUT_PREFIXES.some((p) => path.startsWith(p));
+
 export function classifyPorcelain(porcelain: string): TreeStatus {
   const blocking: string[] = [];
   const warnings: string[] = [];
   for (const line of porcelain.split('\n')) {
     if (line.trim() === '') continue;
-    const xy = line.slice(0, 2);
-    const path = line.slice(3).trim();
-    if (xy !== '??') {
-      blocking.push(line.trim()); // tracked change (staged or not)
-    } else if (
-      !path.includes('/') || // untracked at repo root: could be config
-      BUILD_INPUT_PREFIXES.some((p) => path.startsWith(p))
-    ) {
-      blocking.push(line.trim());
-    } else {
-      warnings.push(line.trim());
-    }
+    // "XY path" — for renames the path field is "old -> new"; either side
+    // touching a build input taints the artifact.
+    const paths = line.slice(3).trim().split(' -> ');
+    if (paths.some(canReachBuild)) blocking.push(line.trim());
+    else warnings.push(line.trim());
   }
   return { blocking, warnings };
 }

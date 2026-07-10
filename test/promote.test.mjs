@@ -56,29 +56,32 @@ test('clean porcelain is neither blocking nor warned', () => {
   assert.deepEqual(classifyPorcelain('\n\n'), { blocking: [], warnings: [] });
 });
 
-test('any tracked modification blocks (staged or unstaged)', () => {
+test('changes that can reach the build block — tracked or untracked alike', () => {
   const status = classifyPorcelain(
-    [' M src/lib/receipt.ts', 'M  package.json', 'A  scripts/new.ts'].join('\n'),
+    [
+      ' M src/lib/receipt.ts', // tracked mod in build input → block
+      'M  package.json', // staged root config → block
+      '?? src/__scratch.ts', // untracked build input → block
+      '?? public/x.png', // untracked build input → block
+      '?? rogue.config.mjs', // untracked at repo root → block
+      'R  test/a.test.mjs -> docs/a.md', // rename out of a build input → block
+    ].join('\n'),
   );
-  assert.equal(status.blocking.length, 3);
+  assert.equal(status.blocking.length, 6);
   assert.equal(status.warnings.length, 0);
 });
 
-test('untracked files block under build inputs and at the root, warn elsewhere', () => {
+test('changes that cannot reach the build only warn (a working Lisa checkout)', () => {
   const status = classifyPorcelain(
     [
-      '?? src/__scratch.ts', // build input → block
-      '?? public/x.png', // build input → block
-      '?? rogue.config.mjs', // repo root (config lives here) → block
-      '?? docs/active/work/T-1/notes.md', // docs → warn
+      ' M docs/active/demand.md', // tracked doc mod → warn
+      ' M .lisa/provenance.jsonl', // agent machinery → warn
+      '?? docs/active/work/T-1/notes.md', // untracked doc → warn
       '?? .lisa/tmp.jsonl', // agent machinery → warn
     ].join('\n'),
   );
-  assert.deepEqual(
-    status.blocking.map((l) => l.slice(3)),
-    ['src/__scratch.ts', 'public/x.png', 'rogue.config.mjs'],
-  );
-  assert.equal(status.warnings.length, 2);
+  assert.deepEqual(status.blocking, []);
+  assert.equal(status.warnings.length, 4);
 });
 
 // --- wrangler output capture -------------------------------------------------
