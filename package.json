@@ -7,7 +7,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs",
+    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs test/promote.test.mjs",
     "ops:check": "node --experimental-strip-types scripts/ops-check.ts",
     "leak:check": "node --experimental-strip-types scripts/leak-check.ts",
     "integration:check": "node --experimental-strip-types scripts/integration-check.ts",
