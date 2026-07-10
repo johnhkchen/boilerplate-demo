@@ -5,7 +5,7 @@ const name = 'Demo Runway';
 const tagline = 'The starting line every demo inherits.';
 const title = 'Demo Runway — the starting line every demo inherits';
 const description =
-  'A working, public web page you can build your demo on top of. The live URL and deploy-on-push land next.';
+  'A working, public web page you can build your demo on top of, with one live server-backed answer already wired in.';
 ---
 
 <BaseLayout title={title} description={description}>
@@ -17,11 +17,70 @@ const description =
       <p class="lede">
         This is the working starting point. It's live, it's static, and it costs
         nothing to leave running. Point your coding agent at it and build the
-        demo you came to make — the public URL and deploy-on-push arrive next.
+        demo you came to make — the one moving part below shows the wiring is
+        real.
       </p>
+    </section>
+
+    <!-- The live boundary made page-visible. The page itself is a plain file that
+         loads instantly; the card below is filled a moment later by asking the
+         server (/api/receipt) for a freshly signed note. The signing key stays on
+         the server — it is never in this page's source or scripts. -->
+    <section class="clay-surface receipt" aria-labelledby="receipt-heading" aria-live="polite">
+      <p class="eyebrow">Fresh from the server</p>
+      <h2 id="receipt-heading">A signed note, made just now</h2>
+      <p class="lede">
+        The page around this card is just a file — it loads instantly and costs
+        nothing to leave up. This card is the exception: a moment after the page
+        loads, it quietly asks the server for a freshly signed note, made with a
+        key your browser never sees. Here's what came back.
+      </p>
+      <div class="clay-well receipt-panel">
+        <p id="receipt-status" class="receipt-status">Asking the server…</p>
+        <dl id="receipt-body" class="receipt-body" hidden>
+          <div class="receipt-row">
+            <dt>Made at</dt>
+            <dd id="receipt-issued">—</dd>
+          </div>
+          <div class="receipt-row">
+            <dt>One-time tag</dt>
+            <dd id="receipt-nonce" class="receipt-code">—</dd>
+          </div>
+          <div class="receipt-row">
+            <dt>The server's signature</dt>
+            <dd id="receipt-signature" class="receipt-code">—</dd>
+          </div>
+        </dl>
+      </div>
     </section>
   </main>
 </BaseLayout>
+
+<script>
+  // Runs in the browser: the page is static, so it fetches the live boundary and
+  // fills the card. Only a relative request + DOM writes live here — no secret.
+  const statusEl = document.getElementById('receipt-status');
+  const bodyEl = document.getElementById('receipt-body');
+  const set = (id: string, value: string) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  try {
+    const res = await fetch('/api/receipt', { headers: { accept: 'application/json' } });
+    if (!res.ok) throw new Error(`server answered ${res.status}`);
+    const receipt = await res.json();
+    set('receipt-issued', new Date(receipt.issuedAt).toLocaleString());
+    set('receipt-nonce', receipt.nonce);
+    set('receipt-signature', receipt.signature);
+    if (statusEl) statusEl.hidden = true;
+    if (bodyEl) bodyEl.hidden = false;
+  } catch {
+    if (statusEl) {
+      statusEl.textContent = "The server didn't answer just now — try a refresh.";
+    }
+  }
+</script>
 
 <style>
   /* Page-specific styling only — global tokens/primitives live in
@@ -31,11 +90,27 @@ const description =
   /* Centering, gutter, and viewport-fill now live in the shared .page shell
      (BaseLayout / base.css). The page contributes only its content and the
      card's measure. */
+  /* Two stacked cards now: the intro and the live boundary. main owns the
+     rhythm between them; each card still caps to the reading measure. */
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+  }
+
   .clay-surface {
     max-width: var(--measure);
     width: 100%;
     margin-inline: auto; /* center the card within the full-width page shell */
     padding: clamp(var(--space-lg), 5vw, var(--space-xl));
+  }
+
+  h2 {
+    margin: 0 0 var(--space-2xs);
+    font-weight: 600;
+    font-size: var(--text-2xl);
   }
 
   .eyebrow {
@@ -65,5 +140,55 @@ const description =
     font-size: var(--text-base);
     color: var(--color-text-soft);
     max-width: 32rem;
+  }
+
+  /* --- Live boundary card --------------------------------------------------
+     The inset well is the pressed-in counterpart of the raised card (clay
+     vocabulary). It holds the server's answer once it arrives. */
+  .receipt-panel {
+    margin-top: var(--space-md);
+    padding: clamp(var(--space-md), 4vw, var(--space-lg));
+  }
+
+  .receipt-status {
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: var(--text-base);
+  }
+
+  .receipt-body {
+    margin: 0;
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .receipt-row {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .receipt-body dt {
+    margin: 0;
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  .receipt-body dd {
+    margin: 0;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  /* Machine values (the one-time tag and the signature) are long hex strings.
+     Let them wrap anywhere so they never push past a narrow phone viewport, and
+     even out the digits for legibility. No mono font token exists yet, so this
+     stays on the body font rather than introducing a literal font-family. */
+  .receipt-code {
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-soft);
   }
 </style>

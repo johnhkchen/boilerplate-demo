@@ -58,6 +58,32 @@ explicit path lists on `git add`, never `-A`.
   - Blanked the key + restarted → **500** `boundary_misconfigured` with the safe
     detail and **no key value / no stack trace**; restored the key afterward.
   - Note: local dev port was 4322 (4321 in use by another process).
-## Step 5 — index.astro render — pending
+## Step 5 — render the boundary on the static page src/pages/index.astro ✅
+
+- Added a second `.clay-surface` card holding a `.clay-well` panel with a
+  server-rendered "Asking the server…" state and a `<dl>` (ids
+  `#receipt-issued/-nonce/-signature`) filled by a bundled module `<script>` that
+  `fetch`es `/api/receipt`. Error path shows a plain "didn't answer — try a
+  refresh" line (no indefinite spinner; P2).
+- `main` became a centered flex column so the two cards stack with rhythm; long
+  hex values wrap with `overflow-wrap: anywhere`. Token vars only — no new
+  color/radius/shadow/font literals. **Chose not to add a `--font-mono` token** to
+  tokens.css because a concurrent thread (T-001-02-02) owns that file right now;
+  avoided the cross-thread file race (Lisa concurrency rule).
+- Refreshed the now-stale lede ("public URL and deploy-on-push arrive next" —
+  both shipped) and `description` to point at the live boundary. Brand voice:
+  plain, warm, no API/HMAC/endpoint jargon in visitor copy.
+- **Verify:**
+  - Served HTML contains the panel markup; grepped page **+ its bundled script**
+    for the real key → **absent** (clause 3).
+  - Headless Chromium (Playwright): after load, the loading line hides and the
+    card shows `Made at`, a 32-hex `One-time tag`, and a 64-hex signature — i.e.
+    the page **visibly renders the live response**. Screenshot saved as
+    `page-render.png`. (The dark pill in it is the dev toolbar; absent in prod.)
+
+## Note on concurrency
+A parallel Lisa thread committed T-001-02-02 (`31a214a`, `5614cfd`) on this shared
+branch mid-session, committing the previously-uncommitted `src/` edits. Verified
+my four commits touched only this ticket's files; no entanglement.
 ## Step 6 — wrangler.jsonc — pending
 ## Step 7 — acceptance verification — pending
