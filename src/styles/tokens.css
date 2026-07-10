@@ -42,15 +42,24 @@
   --font-display: 'Lora', Georgia, 'Times New Roman', serif;
   --font-body: 'Karla', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Fluid-by-default scale. T-001-02-02 tunes/verifies projector + phone
-     sizing; these are sane defaults, not the final responsive contract. */
+  /* Single scaling lever (T-001-02-02). One fluid root font-size drives the
+     WHOLE system: because every size, space, and the 44px control target is a
+     rem, scaling the root scales them together. Phone (≤~375px) rests on the
+     1rem floor → 16px body, 44px targets; a projector (~1920px) reaches the
+     1.5rem ceiling → the same page, proportionally bigger and legible at
+     distance. Floor is 1rem (not px) so it honors the visitor's font-size
+     preference. Retheme the responsive curve HERE, never per-selector. */
+  --root-font: clamp(1rem, 0.92rem + 0.55vw, 1.5rem);
+
+  /* Type scale: plain rem steps that ride --root-font. No vw here — the single
+     fluid mechanism lives on the root; a per-token vw would compound with it. */
   --text-xs: 0.8rem;
   --text-sm: 0.9rem;
-  --text-base: clamp(1rem, 2.6vw, 1.12rem);
-  --text-lg: clamp(1.15rem, 3.4vw, 1.4rem);
-  --text-xl: clamp(1.4rem, 4vw, 1.8rem);
-  --text-2xl: clamp(1.8rem, 5.5vw, 2.4rem);
-  --text-3xl: clamp(2.4rem, 7vw, 3.4rem);
+  --text-base: 1rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.6rem;
 
   --leading-tight: 1.1;
   --leading-normal: 1.6;
@@ -64,6 +73,10 @@
   --space-lg: 1.75rem;
   --space-xl: 2.5rem;
   --space-2xl: 4rem;
+
+  /* --- Layout (page framing; consumed by the .page shell in base.css) --- */
+  --measure: 34rem; /* readable line-length ceiling for a text block */
+  --gutter: clamp(var(--space-md), 4vw, var(--space-2xl)); /* page side gutter */
 
   /* --- Radius ----------------------------------------------------------- */
   --radius-sm: 10px;

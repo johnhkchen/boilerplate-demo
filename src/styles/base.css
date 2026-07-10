@@ -20,6 +20,21 @@ body {
   min-height: 100%;
 }
 
+/* The single scaling lever: turns every rem in the system into a value that
+   grows from phone (16px floor) up to projector (24px ceiling). See --root-font
+   in tokens.css. */
+html {
+  font-size: var(--root-font);
+}
+
+/* Media can't blow out a narrow phone viewport. */
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
 body {
   /* calm warmth: base → cream, top-left-lit */
   background: linear-gradient(160deg, var(--color-bg), var(--b28-cream));
@@ -41,6 +56,39 @@ h3 {
 :focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
+}
+
+/* ---- Page shell (the shared responsive container) -----------------------
+   Structural, not decorative: BaseLayout wraps every page in .page. It owns the
+   framing — fill the viewport, center the content block, hold a gutter so the
+   card never touches the edge, and guarantee no horizontal scroll — while the
+   page owns its content and its measure. 100dvh (not 100vh) avoids the mobile
+   browser-chrome height jump. The gutter grows with env() safe-area insets on
+   notched phones (max() → 0 where unsupported, so no fallback branch). */
+.page {
+  min-height: 100dvh;
+  display: grid;
+  /* minmax(0, 1fr) pins the single column to the container width so it can't
+     balloon to a child's max-content and overflow a phone (an auto track can,
+     and clip). align-content centers the row block vertically; the default
+     justify-items:stretch makes the wrapper full-width, so the child centers
+     its OWN content via margin-inline:auto rather than shrink-wrapping. */
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  padding-block: var(--space-xl);
+  padding-inline: max(
+    var(--gutter),
+    env(safe-area-inset-left),
+    env(safe-area-inset-right)
+  );
+  overflow-x: clip;
+}
+
+/* Belt-and-suspenders for future wide content (tables, <pre>, media): let the
+   pinned track actually shrink and never let a child exceed it. */
+.page > * {
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ---- Clay primitives (the b28 vocabulary; token-only) -------------------
