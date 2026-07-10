@@ -73,8 +73,18 @@ export default defineConfig({
         // Apply the D1 migration to the local store before `astro dev` takes the
         // binding's lock — race-free and idempotent (already-applied migrations are
         // skipped) — using the same isolated binding config as the dev server.
+        //
+        // `--persist-to .wrangler/state` is load-bearing: it pins the migration to the
+        // SAME local D1 the dev server serves. Astro 7's Cloudflare Vite plugin persists
+        // to `<repo-root>/.wrangler/state/v3` (rooted at the Vite project root), but
+        // `wrangler ... --config tests/support/backstage.wrangler.jsonc` otherwise roots
+        // its default persist dir at the CONFIG FILE's directory
+        // (`tests/support/.wrangler/state/v3`) — a different database. Without this flag
+        // the migration lands in a store the dev server never reads, so the first POST
+        // hits an unmigrated table and returns 500 `entry_write_failed`. The flag
+        // resolves relative to cwd (the repo root), matching the dev server exactly.
         command:
-          'npx wrangler d1 migrations apply BACKSTAGE_DB --local --config tests/support/backstage.wrangler.jsonc && npm run dev -- --host 127.0.0.1 --port 4323',
+          'npx wrangler d1 migrations apply BACKSTAGE_DB --local --persist-to .wrangler/state --config tests/support/backstage.wrangler.jsonc && npm run dev -- --host 127.0.0.1 --port 4323',
         url: LOCAL_BASE_URL,
         timeout: FLOW_BUDGET_MS.serverStartup,
         reuseExistingServer: false,
@@ -87,8 +97,9 @@ export default defineConfig({
           CODEX_THREAD_ID: '',
           CLOUDFLARE_INCLUDE_PROCESS_ENV: 'true',
           // Point the emulated runtime at the isolated config so `.dev.vars` cannot
-          // override these values with machine-specific ones. The migration command
-          // above uses this same config so both processes address the same local D1.
+          // override these values with machine-specific ones. The shared config aligns
+          // bindings/vars; the migration's `--persist-to` (above) is what aligns the
+          // actual local D1 store both processes read and write.
           DEMO_WRANGLER_CONFIG_PATH: backstageWranglerConfigPath,
           DEMO_SIGNING_KEY:
             env.DEMO_SIGNING_KEY ?? 'playwright-local-test-key',
