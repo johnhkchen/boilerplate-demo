@@ -55,12 +55,18 @@ GitHub receives only the credentials needed to deploy.
 ## Release and verification
 
 Push `main`. The workflow performs a locked install, the full `npm run verify`
-gate, pending remote D1 migrations, and the Worker deploy. After it succeeds:
+gate, pending remote D1 migrations, and then promotes the pushed commit
+(`npm run promote`, below) — which itself verifies that the hostname serves
+the new version. To double-check by hand:
 
 ```sh
 curl --fail https://demo.b28.dev/
+curl -si https://demo.b28.dev/api/receipt | grep -i x-demo-version
 OPS_CHECK_URL=https://demo.b28.dev/api/receipt npm run ops:check
 ```
+
+`x-demo-version-id` is the Workers version now serving; `x-demo-version-tag`
+is the short sha of the commit it was built from.
 
 `https://demo-runway.<workers-subdomain>.workers.dev/` serves the same app and
 stays enabled as the Worker-health probe: it answers even when the zone layer
@@ -100,3 +106,53 @@ plus those three API routes, with backstage reads and writes passcode-gated.
 Workers bind no ports, and no editor, dev-server, or admin surface exists on
 this hostname; session editor/preview surfaces live on separate
 Access-protected hostnames (E-004, later tickets).
+
+## Promotion and rollback
+
+A release is an immutable, commit-tagged Workers **version** plus an atomic
+pointer-move (`wrangler versions upload` + `versions deploy`) — never a
+rebuild-in-place. CI does this on every push to `main`; the same commands work
+by hand:
+
+```sh
+npm run promote -- <commit-ish>        # e.g. HEAD, a sha, a session's commit
+npm run rollback                       # back to the previous deployment
+npm run rollback -- <version-id>       # back to a specific version
+```
+
+**What promote does.** Resolves the commit and refuses unless the working
+tree *is* that commit (changes under `src/`, `public/`, `scripts/`, `test/`,
+`tests/`, `migrations/`, or the repo root block; changes elsewhere only
+warn). Runs the full `npm run verify` gate and refuses on failure
+(`--skip-verify` exists for CI, where the same tree passed the workflow's own
+verify step moments earlier). Builds, uploads the version tagged with the
+commit's short sha, smoke-tests the version's **preview URL** before anything
+public changes, then moves the pointer and confirms
+`https://demo.b28.dev/api/receipt` answers with the new version's
+`x-demo-version-id`. The commit and the prior version id are recorded in the
+Cloudflare deployment message (`promote <sha> prior=<version-id>`) — the
+durable ledger, readable via `npx wrangler deployments list` — and cached
+locally in gitignored `.promote/` files.
+
+**What rollback does.** Moves the pointer back to the previous deployment's
+version (or an explicit version id) with **no rebuild and no gate** — the
+target is an immutable version that already passed the gate when promoted.
+Takes under a second, touches no DNS, routes, or certificates.
+
+**Exit codes** (shared by both commands): `0` deployed and hostname verified ·
+`1` refused or failed before the pointer moved (production untouched) ·
+`2` misconfigured invocation · `3` the pointer moved but the hostname could
+not be verified — production changed; investigate.
+
+**Retention.** The active deployment's version cannot be garbage-collected —
+it *is* what serves. Rollback reaches the 100 most recently uploaded
+versions; commit tags and deployment messages keep them identifiable. State
+is versioned only for the Worker: **D1 is outside versions** — migrations are
+forward-only, rolling back the Worker does not roll back the schema, and
+promoting an old commit runs it against the current schema.
+
+**Where `npm run deploy` still fits.** Two places only: the one-time
+bootstrap above (version uploads cannot create the Worker or attach the
+custom domain the first time), and after changing `routes` or other trigger
+config in `wrangler.jsonc`, which version uploads do not apply. Routine
+releases always go through promote.
