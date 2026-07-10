@@ -3,7 +3,10 @@
 // inherits." It owns the document shell and is the single site that imports the
 // template's token layer, so every page gets the tokens without re-authoring a
 // <head>. Order matters: tokens first (define the vars), then base (consumes
-// them). T-001-02-02 adds the responsive layout container here.
+// them). The `.page` shell below is the shared responsive container every page
+// inherits: it fills the viewport, centers content, holds a fluid gutter, and
+// guarantees no horizontal scroll on a phone (see base.css). Sizing scales from
+// phone to projector via the fluid root font-size (tokens.css --root-font).
 import '../styles/tokens.css';
 import '../styles/base.css';
 
@@ -25,6 +28,8 @@ const { title, description } = Astro.props;
     <link rel="icon" href="data:," />
   </head>
   <body>
-    <slot />
+    <div class="page">
+      <slot />
+    </div>
   </body>
 </html>

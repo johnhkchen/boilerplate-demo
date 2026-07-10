@@ -28,15 +28,13 @@ const description =
      src/styles/*. Every value resolves from tokens.css (var(--…)); no literals
      here, which is the visible proof the page uses tokens, not browser
      defaults. Retheme happens in tokens.css, never in this file. */
-  main {
-    display: grid;
-    place-items: center;
-    padding: clamp(var(--space-md), 4vw, var(--space-xl));
-  }
-
+  /* Centering, gutter, and viewport-fill now live in the shared .page shell
+     (BaseLayout / base.css). The page contributes only its content and the
+     card's measure. */
   .clay-surface {
-    max-width: 34rem;
+    max-width: var(--measure);
     width: 100%;
+    margin-inline: auto; /* center the card within the full-width page shell */
     padding: clamp(var(--space-lg), 5vw, var(--space-xl));
   }
 
