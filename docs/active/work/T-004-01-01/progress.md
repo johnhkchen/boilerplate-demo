@@ -136,3 +136,38 @@ the success frame, not before it.
 1. Commit durable finding/evidence/Progress as the implementation unit.
 2. Run repository verification and record outcomes.
 3. Inspect artifact scope, write `review.md`, commit the handoff, and stop.
+
+## Durable implementation commit
+
+`8045654 docs(spike): record Sandbox HMR no-go finding`
+
+This commit contains only the durable knowledge note, two redacted machine-readable evidence
+files, and this Progress log. The disposable Worker/image source remained outside the repository
+and was removed after cleanup.
+
+## Repository verification
+
+Completed after the empirical commit:
+
+- `npm test` → **80/80 pass**, 0 failures, 0 skips.
+- `npm run typecheck` → Astro check **0 errors / 0 warnings / 0 hints**; `tsc --noEmit`
+  passes; generated Worker types are current.
+- `npm run build` → succeeds; static pages and server entrypoints emitted.
+- `npm run deploy:dry` → succeeds; Wrangler bundles the stable App Worker and exits at dry run.
+- `git diff --check` on ticket artifacts → clean.
+- targeted credential/token/private-key grep on staged spike text → no matches.
+
+The build prints the repository’s existing informational deprecation warning for Astro’s
+string-form memory session driver. It is unrelated to this documentation-only ticket.
+
+`npm run leak:check` was not run as a standalone live probe because it targets a separately
+running stable demo server. Its pure coverage ran inside `npm test`, and the spike’s staged
+artifacts received a separate credential grep. No production application code changed here.
+
+## Final implementation state
+
+- Research, Design, Structure, Plan, and Implement artifacts are written.
+- The durable technical finding is PARTIAL / NO-GO, not an acceptance claim.
+- All spike remote/local resources are cleaned up.
+- No ticket phase/status/checkbox edit was made.
+- Review is the only remaining phase artifact.
