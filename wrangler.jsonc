@@ -1,28 +1,20 @@
 {
-  // Cloudflare Workers Static Assets + one on-demand route. `main` points at the
-  // Worker the Astro Cloudflare adapter emits (T-002-01-02). This is NOT a return
-  // to always-on compute: Cloudflare serves every static asset (incl. `/`)
-  // straight from the edge with no cold start, and the adapter's generated
-  // `dist/_routes.json` excludes those paths from the Worker. The Worker runs only
-  // for the paths it includes — `/api/*`, i.e. the single secret-holding boundary.
+  // Cloudflare Workers Static Assets + on-demand API routes. Cloudflare serves
+  // every static asset (including `/`) directly from the edge; only `/api/*`
+  // invokes the generated Worker.
   //
-  // The signing key is NOT here. Set it as a Worker secret at deploy time:
+  // Runtime secrets are not stored here. Set them interactively:
   //   npx wrangler secret put DEMO_SIGNING_KEY
-  // Locally it comes from `.dev.vars` (gitignored; template is .dev.vars.example).
+  //   npx wrangler secret put DEMO_PASSCODE
+  // Local values come from the gitignored `.dev.vars` file.
   //
-  // No `account_id` and no tokens live here. The account is supplied at deploy
-  // time via `wrangler login` or CLOUDFLARE_ACCOUNT_ID; the API token via
-  // environment / CI secret (T-001-01-03). Keeping this file account-agnostic
-  // and secret-free keeps the project sovereign and transferable (charter P6).
+  // No account ID, API token, or secret value lives in this file. The D1 UUID is
+  // a non-secret resource identifier added by Wrangler during the production
+  // bootstrap. Remove `database_id` before deploying this template to a different
+  // account so Wrangler can provision a new database there.
   //
-  // Backstage entries use D1 rather than KV because they form a fixed, structured
-  // append-and-retrieve feed: D1 enforces the two entry types and returns every
-  // field in one deterministically ordered query, while KV would require key/list/
-  // value composition and a fresh write may be invisible in another location for
-  // roughly a minute. Wrangler provisions this binding into the deploying
-  // project's own account, preserving an account-agnostic, transferable template.
-  //
-  // Deploy: `npm run deploy` (astro build && wrangler deploy).
+  // Backstage entries use D1 because they form a structured, append-and-retrieve
+  // feed with schema enforcement and deterministic ordering.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "demo-runway",
   "compatibility_date": "2026-07-10",
@@ -34,13 +26,13 @@
   },
   "secrets": {
     // Declares the runtime contract without storing values in this repository.
-    // Wrangler validates these in local development and generates stable Env types.
     "required": ["DEMO_SIGNING_KEY", "DEMO_PASSCODE"]
   },
   "d1_databases": [
     {
       "binding": "BACKSTAGE_DB",
-      "migrations_dir": "./migrations"
+      "migrations_dir": "./migrations",
+      "database_id": "c95861d4-2cfe-47c0-8a9b-c5e081779e48"
     }
   ],
   "assets": { "directory": "./dist", "binding": "ASSETS" },
