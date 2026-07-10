@@ -1,0 +1,162 @@
+{
+  "capturedAt": "2026-07-10T23:49:28.601Z",
+  "scope": "local-sandbox-sdk",
+  "verdict": "relaunch-required",
+  "goNoGo": "conditional-go",
+  "summary": "Neither Astro nor code-server resumed after idle sleep. A fresh container started from the baked image; ordinary filesystem and shell state were lost. Both services relaunched successfully, so S-004-03 may proceed only with durable workspace restore and idempotent supervision.",
+  "versions": {
+    "sandboxSdk": "0.12.3",
+    "sandboxImage": "0.12.3",
+    "wrangler": "4.110.0",
+    "dockerServer": "29.6.1",
+    "nodeInContainer": "22.23.1",
+    "astro": "7.0.7",
+    "codeServer": "4.127.0",
+    "code": "1.127.0"
+  },
+  "lifecycle": {
+    "sandboxId": "t004-sleep-wake",
+    "sleepAfter": "10m",
+    "keepAlive": false,
+    "lastActivityAt": "2026-07-10T23:38:41.680Z",
+    "wakeRequestedAt": "2026-07-10T23:49:10.512Z",
+    "wakeSnapshotAt": "2026-07-10T23:49:11.934Z",
+    "idleBeforeWakeRequestMs": 628832,
+    "snapshotToSnapshotMs": 630254,
+    "wranglerLifecycleSignal": "Activity expired, signalling container to stop"
+  },
+  "before": {
+    "capturedAt": "2026-07-10T23:38:41.680Z",
+    "placementId": null,
+    "processes": [
+      {
+        "id": "astro-dev",
+        "pid": 85,
+        "command": "npm run dev",
+        "status": "running",
+        "startTime": "2026-07-10T23:38:37.207Z"
+      },
+      {
+        "id": "code-server",
+        "pid": 173,
+        "command": "code-server --bind-addr 0.0.0.0:8080 --auth none --disable-telemetry /workspace/demo",
+        "status": "running",
+        "startTime": "2026-07-10T23:38:39.920Z"
+      }
+    ],
+    "ports": {
+      "astro4321": "listening",
+      "codeServer8080": "listening"
+    },
+    "sentinel": {
+      "exists": true,
+      "value": "T004_IDLE_SENTINEL_20260710"
+    },
+    "astroSource": {
+      "exists": true,
+      "marker": "IDLE MUTATION",
+      "hash": "c3ced8a59d809a793b8a23812147873d7cc3189dc7c54edd7ac36c6d8a9b12f8"
+    },
+    "shellState": {
+      "sessionAvailable": true,
+      "marker": "T004_IDLE_SHELL_20260710"
+    }
+  },
+  "afterWakeBeforeRelaunch": {
+    "capturedAt": "2026-07-10T23:49:11.934Z",
+    "placementId": null,
+    "processes": [],
+    "ports": {
+      "astro4321": "closed",
+      "codeServer8080": "closed"
+    },
+    "sentinel": {
+      "exists": false,
+      "value": null
+    },
+    "astroSource": {
+      "exists": true,
+      "marker": "HMR BEFORE",
+      "hash": "961b549038c8d6bc093b93e2c556461a0e632c95521e24da6466ac99063244a9"
+    },
+    "shellState": {
+      "sessionAvailable": true,
+      "marker": null,
+      "interpretation": "The named session wrapper could be obtained, but its exported environment was gone. Session identity is not shell-state persistence."
+    }
+  },
+  "comparison": {
+    "sameSandboxId": true,
+    "astroProcessSurvived": false,
+    "codeServerProcessSurvived": false,
+    "processIdsPreserved": false,
+    "portsStayedReady": false,
+    "sentinelPreserved": false,
+    "sourceMutationPreserved": false,
+    "shellStatePreserved": false,
+    "imageStateRestored": true,
+    "lostState": [
+      "Astro dev process and PID 85",
+      "code-server process and PID 173",
+      "listeners on ports 4321 and 8080",
+      "/workspace/idle-sentinel.txt",
+      "post-boot Astro source mutation",
+      "explicit shell-session environment marker"
+    ]
+  },
+  "relaunch": {
+    "attempted": true,
+    "startedAfterWakeSnapshot": true,
+    "durationMs": 4090,
+    "astroReady": true,
+    "codeServerReady": true,
+    "processes": [
+      {
+        "id": "astro-dev",
+        "pid": 122,
+        "status": "running",
+        "port": 4321
+      },
+      {
+        "id": "code-server",
+        "pid": 210,
+        "status": "running",
+        "port": 8080
+      }
+    ],
+    "workspaceRestored": false,
+    "sourceMarker": "HMR BEFORE",
+    "sentinelExists": false,
+    "shellMarker": null,
+    "note": "Services can be relaunched from the baked image, but relaunch does not restore collaborative workspace or shell state."
+  },
+  "downstreamConsequence": {
+    "story": "S-004-03",
+    "transparentResume": "no-go",
+    "sessionBuild": "conditional-go",
+    "requirements": [
+      "Persist or back up the mutable workspace outside the ordinary container filesystem.",
+      "Detect a fresh container without trusting cached process IDs.",
+      "Restore or mount the workspace before declaring preview/editor ready.",
+      "Idempotently start and health-check Astro and code-server on every fresh-container wake.",
+      "Treat shell and terminal state as non-durable and tell users that terminals reconnect fresh.",
+      "Use keepAlive during an actively shared session or accept a cold restore/relaunch after inactivity.",
+      "Persist uncommitted work before disabling keepAlive, allowing idle sleep, or destroying the Sandbox.",
+      "Re-establish transient port/tunnel forwarding after a container restart when applicable."
+    ]
+  },
+  "cleanup": {
+    "sandboxDestroyed": true,
+    "destroyedAt": "2026-07-10T23:49:28.601Z",
+    "wranglerStopped": true,
+    "transientTreeRemoved": true,
+    "residualProxyContainerStopped": true,
+    "remoteResourcesCreated": false
+  },
+  "limitations": [
+    "The experiment ran through Wrangler local mode and Docker because the sovereign Cloudflare account lacks Workers Paid Containers entitlement.",
+    "Remote Cloudflare placement, production eviction timing, cold start, edge TLS, and production WebSockets were not exercised.",
+    "The prior ticket's browser-IDE and production-container acceptance gaps remain unresolved.",
+    "Local transport did not expose a placement ID, so fresh-container identity is inferred from the empty process list, closed ports, lost runtime state, restored baked source, and Wrangler's activity-expired signal."
+  ]
+}
