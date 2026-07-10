@@ -269,14 +269,25 @@ async function startServer(
   };
   child.stdout?.on('data', (chunk: Buffer) => capture(chunk, process.stdout));
   child.stderr?.on('data', (chunk: Buffer) => capture(chunk, process.stderr));
+  child.once('error', (error) => {
+    output = appendTail(output, `\nserver spawn failed: ${error.message}`);
+  });
 
   const server = { child, output: () => output };
-  await waitForServer(server, config.baseUrl, signal);
-  return server;
+  try {
+    await waitForServer(server, config.baseUrl, signal);
+    return server;
+  } catch (error) {
+    // `main` cannot own the handle until this function returns. Clean it here so
+    // a readiness error never leaves an untracked dev-server process behind.
+    await stopServer(server);
+    throw error;
+  }
 }
 
 async function stopServer(server: RunningServer | undefined): Promise<void> {
   if (server === undefined) return;
+  if (server.child.exitCode !== null || server.child.signalCode !== null) return;
   terminateChild(server.child, 'SIGTERM');
   await Promise.race([
     new Promise<void>((resolve) => server.child.once('close', () => resolve())),
