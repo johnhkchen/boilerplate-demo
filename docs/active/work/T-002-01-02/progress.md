@@ -27,7 +27,23 @@ Tracking the Plan's steps. Deviations noted inline.
   even before the boundary route exists).
 - Build WARN (benign): "Cloudflare does not support sharp at runtime" — we use no
   runtime image service; prerendered pages are unaffected.
-## Step 3 — lib/receipt.ts — pending
+## Step 3 — pure signing helper src/lib/receipt.ts ✅
+
+- Implemented `BOUNDARY_NAME`, `Receipt`, `canonicalMessage`, `signReceipt`,
+  `makeReceipt` (with `now`/`randomBytes` injectors), `verifyReceipt`. Web Crypto
+  HMAC-SHA256, hex-encoded; no env access in this module.
+- **Verify** (throwaway Node script, not committed): deterministic signature for
+  fixed key/now/nonce ✓; `verifyReceipt` round-trips ✓; tampered nonce → false ✓;
+  wrong key → false ✓; key string absent from `JSON.stringify(receipt)` ✓; fresh
+  nonce per real call ✓.
+
+### Deviation note — commit hygiene
+Step 2's first commit used `git add -A`, which swept in unrelated pre-existing
+untracked scaffolding and other tickets' unstaged edits. Caught immediately:
+`git reset --soft HEAD~1 && git reset` restored the working tree exactly, then
+re-committed only this ticket's files. Working tree's prior `M` files
+(index.astro, base.css, …) and untracked docs left untouched. Going forward:
+explicit path lists on `git add`, never `-A`.
 ## Step 4 — api/receipt.ts — pending
 ## Step 5 — index.astro render — pending
 ## Step 6 — wrangler.jsonc — pending
