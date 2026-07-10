@@ -10,6 +10,10 @@ node_modules/
 # wrangler local state / cache (deploy metadata, build artifacts)
 .wrangler/
 
+# promote/rollback records — machine-local cache; the durable ledger is the
+# Cloudflare deployment history (version tags + deployment messages)
+.promote/
+
 # Playwright reports, traces, screenshots, and videos
 test-results/
 playwright-report/

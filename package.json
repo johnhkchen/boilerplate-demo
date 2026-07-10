@@ -24,7 +24,9 @@
     "preview": "wrangler dev",
     "astro": "astro",
     "deploy": "astro build && wrangler deploy",
-    "deploy:dry": "astro build && wrangler deploy --dry-run"
+    "deploy:dry": "astro build && wrangler deploy --dry-run",
+    "promote": "node --experimental-strip-types scripts/promote.ts",
+    "rollback": "node --experimental-strip-types scripts/rollback.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
