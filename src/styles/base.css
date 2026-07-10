@@ -14,6 +14,13 @@
   box-sizing: border-box;
 }
 
+/* Author-level display rules (grid/flex primitives) must never override the
+   semantic hidden state. This keeps inactive panels out of layout and the
+   accessibility tree until browser code deliberately reveals them. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;

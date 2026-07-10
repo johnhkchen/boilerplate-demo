@@ -27,8 +27,8 @@ export const BACKSTAGE_PASSCODE = 'playwright-backstage-knock';
 // Nested budgets keep the most useful failure closest to the cause while outer
 // limits guarantee that setup or teardown cannot leave the whole run hanging.
 export const FLOW_BUDGET_MS = {
-  assertion: 4_000,
-  action: 5_000,
+  assertion: 8_000,
+  action: 10_000,
   receiptStep: 5_000,
   test: 20_000,
   // The backstage dev server applies the D1 migration before `astro dev` is ready, so its

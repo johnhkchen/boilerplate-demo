@@ -34,6 +34,11 @@ test('a stakeholder submits a reference from a phone and it lands in the store',
       await page.goto('/backstage');
       await expect(page.getByRole('heading', { name: 'Backstage' })).toBeVisible();
       await expect(page.getByLabel('Shared passcode')).toBeVisible();
+      await expect(
+        page.locator('#bs-confirm'),
+        'the confirmation must stay hidden before a successful submission',
+      ).toBeHidden();
+      await expect(page.locator('#bs-confirm-url-row')).toBeHidden();
     },
     { box: true, timeout: FLOW_BUDGET_MS.action },
   );
@@ -52,9 +57,10 @@ test('a stakeholder submits a reference from a phone and it lands in the store',
 
       // The form is swapped for the confirmation panel, which echoes what was sent.
       await expect(
-        page.getByRole('heading', { name: 'Got it — thanks.' }),
+        page.locator('#bs-confirm'),
         'the confirmation panel should appear after a successful submit',
       ).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Got it — thanks.' })).toBeVisible();
       await expect(page.locator('#bs-confirm-text')).toHaveText(noteText);
       await expect(page.locator('#bs-confirm-url')).toHaveText(linkUrl);
     },
