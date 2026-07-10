@@ -61,7 +61,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
 
   const validation = validateBackstageSubmission(payload);
-  if (!validation.valid) {
+  // Use property presence for narrowing because this repo's Astro/TS settings do
+  // not narrow boolean discriminants reliably (the shared GateDecision has the
+  // same pre-existing typecheck limitation).
+  if ('issues' in validation) {
     return error(
       422,
       'invalid_entry',
