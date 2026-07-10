@@ -6,13 +6,17 @@
 # CI hosts, or deploying by hand, needs no rewrite (charter P6: sovereign).
 #
 # Required repository secrets (set once by the owner — never commit these):
-#   CLOUDFLARE_API_TOKEN   API token with the "Edit Cloudflare Workers" template.
+#   CLOUDFLARE_API_TOKEN   API token with Workers Scripts + D1 edit permissions.
 #   CLOUDFLARE_ACCOUNT_ID  The target Cloudflare account id.
 # Set them with:
 #   gh secret set CLOUDFLARE_API_TOKEN
 #   gh secret set CLOUDFLARE_ACCOUNT_ID
 # or in GitHub → Settings → Secrets and variables → Actions. wrangler reads both
 # from the environment automatically; no wrangler.jsonc edit is needed.
+#
+# Before the first CI push, complete the one-time Worker bootstrap in
+# docs/knowledge/deployment.md. Runtime secrets live in Cloudflare, not GitHub;
+# subsequent deploys preserve them.
 
 name: Deploy to Cloudflare
 
@@ -54,6 +58,12 @@ jobs:
 
       - name: Verify unit, type, browser, leak, and deploy contracts
         run: npm run verify
+
+      - name: Apply pending D1 migrations
+        run: npx wrangler d1 migrations apply BACKSTAGE_DB --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Build and deploy to Cloudflare
         run: npm run deploy
