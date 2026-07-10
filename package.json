@@ -4,6 +4,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs",
+    "ops:check": "node --experimental-strip-types scripts/ops-check.ts",
+    "test:flow": "playwright test --project=healthy",
+    "test:flow:stalled": "playwright test --project=stalled",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -13,6 +17,7 @@
   },
   "devDependencies": {
     "@astrojs/cloudflare": "^12.6.13",
+    "@playwright/test": "^1.61.1",
     "astro": "^5.13.0",
     "wrangler": "^4"
   }
