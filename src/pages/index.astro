@@ -1,0 +1,124 @@
+---
+const name = 'Demo Runway';
+const tagline = 'The starting line every demo inherits.';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demo Runway — the starting line every demo inherits</title>
+    <meta
+      name="description"
+      content="A working, public web page you can build your demo on top of. The live URL and deploy-on-push land next."
+    />
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main>
+      <section class="clay-surface" aria-labelledby="title">
+        <p class="eyebrow">Ready when you are</p>
+        <h1 id="title">{name}</h1>
+        <p class="tagline">{tagline}</p>
+        <p class="lede">
+          This is the working starting point. It's live, it's static, and it
+          costs nothing to leave running. Point your coding agent at it and
+          build the demo you came to make — the public URL and deploy-on-push
+          arrive next.
+        </p>
+      </section>
+    </main>
+
+    <style>
+      /* Sincere claymorphism on the b28.dev palette. One light source
+         (top-left); warm, ink-tinted shadows; what looks soft is soft. */
+      :root {
+        --steel: #44679b;
+        --off-white: #faf8f5;
+        --cream: #f2efe9;
+        --ink: #1c1917;
+        --ink-soft: #57534e;
+
+        --radius: 28px;
+        /* warm shadow tinted by the ink, never flat gray */
+        --shadow-lo: rgba(28, 25, 23, 0.09);
+        --shadow-hi: rgba(255, 255, 255, 0.85);
+
+        --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+        --font-body: 'Karla', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        padding: clamp(1.25rem, 4vw, 3rem);
+        background: linear-gradient(160deg, var(--off-white), var(--cream));
+        color: var(--ink);
+        font-family: var(--font-body);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .clay-surface {
+        max-width: 34rem;
+        width: 100%;
+        padding: clamp(1.75rem, 5vw, 3rem);
+        background: var(--off-white);
+        border-radius: var(--radius);
+        /* raised: light from top-left, warm shadow to bottom-right */
+        box-shadow:
+          -10px -10px 22px var(--shadow-hi),
+          14px 16px 34px var(--shadow-lo);
+      }
+
+      .eyebrow {
+        margin: 0 0 0.75rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--steel);
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(2.4rem, 7vw, 3.4rem);
+        line-height: 1.05;
+        color: var(--ink);
+      }
+
+      .tagline {
+        margin: 0 0 1.25rem;
+        font-family: var(--font-display);
+        font-size: clamp(1.15rem, 3.4vw, 1.4rem);
+        color: var(--steel);
+      }
+
+      .lede {
+        margin: 0;
+        font-size: clamp(1rem, 2.6vw, 1.12rem);
+        color: var(--ink-soft);
+        max-width: 32rem;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .clay-surface {
+          transition: box-shadow 200ms ease;
+        }
+      }
+    </style>
+  </body>
+</html>

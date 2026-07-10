@@ -1,0 +1,11 @@
+# build output — never committed; keeps deploy-ticket diffs clean
+dist/
+
+# dependencies
+node_modules/
+
+# astro generated types / content cache
+.astro/
+
+# macOS
+.DS_Store
