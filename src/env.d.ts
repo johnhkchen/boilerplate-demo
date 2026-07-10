@@ -18,6 +18,12 @@ type Env = {
   // deliberately unsafe and exists only to prove leak:check turns red. Unset (the
   // norm in dev and prod) → healthy. Parsed/normalized by src/lib/fault.ts.
   DEMO_FAULT?: string;
+  // The backstage entry store (D1), consumed server-side by the persistence module
+  // (src/lib/backstage-store.ts) that the submit route and retrieve seam compose over.
+  // Typed as the minimal D1 surface that module uses rather than a global `D1Database`,
+  // which does not resolve without @cloudflare/workers-types; real D1 is structurally
+  // assignable to it. Not PUBLIC_-prefixed and never touched by client code.
+  BACKSTAGE_DB: import('./lib/backstage-store.ts').EntryStoreDatabase;
 };
 
 type Runtime = import('@astrojs/cloudflare').Runtime<Env>;
