@@ -7,5 +7,8 @@ node_modules/
 # astro generated types / content cache
 .astro/
 
+# wrangler local state / cache (deploy metadata, build artifacts)
+.wrangler/
+
 # macOS
 .DS_Store
