@@ -1,0 +1,30 @@
+---
+// The base layout every page inherits — "the starting line every demo
+// inherits." It owns the document shell and is the single site that imports the
+// template's token layer, so every page gets the tokens without re-authoring a
+// <head>. Order matters: tokens first (define the vars), then base (consumes
+// them). T-001-02-02 adds the responsive layout container here.
+import '../styles/tokens.css';
+import '../styles/base.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

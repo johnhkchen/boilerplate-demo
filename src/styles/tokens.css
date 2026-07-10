@@ -1,0 +1,107 @@
+/* ==========================================================================
+   Demo Runway — design tokens
+   --------------------------------------------------------------------------
+   The single retheme surface. Literal values live ONLY in this file. Everything
+   else (base.css, layouts, pages) references the semantic roles below via
+   var(--…). To reskin for a Figma brief, change values here — never markup.
+
+   Two tiers:
+     1. Raw palette  (--b28-*)  the b28.dev brand identity constants.
+     2. Semantic roles          named by what they DO; the vocabulary surfaces use.
+
+   Identity: sincere claymorphism on the b28 palette — steel blue on warm
+   off-white/cream, ink text, Lora (display) + Karla (body), one top-left light
+   source, warm ink-tinted shadows. No remote fetch: this ships in the bundle.
+   ========================================================================== */
+
+:root {
+  /* --- Tier 1: raw palette (b28 identity constants) --------------------- */
+  --b28-steel: #44679b; /* signature steel blue */
+  --b28-off-white: #faf8f5; /* warm page/base */
+  --b28-cream: #f2efe9; /* warm secondary */
+  --b28-ink: #1c1917; /* near-black text */
+  --b28-ink-soft: #57534e; /* muted text */
+  --b28-on-steel: #faf8f5; /* text ON the steel accent */
+  /* claymorphism shadow tints — warm, ink-derived, never flat gray */
+  --b28-shadow-lo: rgba(28, 25, 23, 0.09); /* cast shadow, bottom-right */
+  --b28-shadow-hi: rgba(255, 255, 255, 0.85); /* highlight, top-left light */
+
+  /* --- Tier 2: semantic color roles (surfaces reference ONLY these) ----- */
+  --color-bg: var(--b28-off-white);
+  --color-surface: var(--b28-off-white);
+  --color-text: var(--b28-ink);
+  --color-text-soft: var(--b28-ink-soft);
+  --color-accent: var(--b28-steel);
+  --color-accent-text: var(--b28-on-steel);
+  --color-border: var(--b28-cream);
+  --color-focus: var(--b28-steel);
+
+  /* --- Type ------------------------------------------------------------- */
+  /* Font stacks name Lora/Karla with system-safe fallbacks; no web-font
+     fetch at this stage (see review of T-001-01-01, concern #2). */
+  --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-body: 'Karla', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Fluid-by-default scale. T-001-02-02 tunes/verifies projector + phone
+     sizing; these are sane defaults, not the final responsive contract. */
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-base: clamp(1rem, 2.6vw, 1.12rem);
+  --text-lg: clamp(1.15rem, 3.4vw, 1.4rem);
+  --text-xl: clamp(1.4rem, 4vw, 1.8rem);
+  --text-2xl: clamp(1.8rem, 5.5vw, 2.4rem);
+  --text-3xl: clamp(2.4rem, 7vw, 3.4rem);
+
+  --leading-tight: 1.1;
+  --leading-normal: 1.6;
+
+  /* --- Spacing (modular rem scale; stops ad-hoc literals) ---------------- */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.25rem;
+  --space-lg: 1.75rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+
+  /* --- Radius ----------------------------------------------------------- */
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px; /* the generous clay card radius */
+
+  /* --- Shadow (claymorphism: one top-left light, warm cast) -------------- */
+  --shadow-raised:
+    -10px -10px 22px var(--b28-shadow-hi), 14px 16px 34px var(--b28-shadow-lo);
+  --shadow-inset:
+    inset 6px 6px 14px var(--b28-shadow-lo),
+    inset -6px -6px 14px var(--b28-shadow-hi);
+
+  /* --- Focus (visible ring; a11y) --------------------------------------- */
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--color-focus);
+
+  /* --- Control size (buttons/inputs the harness will add) --------------- */
+  --control-height: 2.75rem; /* 44px — comfortable touch target (P3) */
+  --control-padding-x: 1.15rem;
+  --control-radius: var(--radius-md);
+  --control-font: var(--text-base);
+
+  /* --- Motion (calm; gated by prefers-reduced-motion in base.css) ------- */
+  --motion-duration: 200ms;
+  --motion-ease: ease;
+}
+
+/* --- Dark-theme seam (NOT active) ---------------------------------------
+   Because surfaces reference only the semantic roles above, a dark theme is a
+   value remap, not a rewrite. Enable later by uncommenting and tuning:
+
+   :root[data-theme='dark'] {
+     --color-bg: #201d1b;
+     --color-surface: #2a2624;
+     --color-text: #f2efe9;
+     --color-text-soft: #b8b2ac;
+     --color-border: #3a3532;
+   }
+   ------------------------------------------------------------------------ */

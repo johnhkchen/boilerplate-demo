@@ -1,0 +1,104 @@
+/* ==========================================================================
+   Demo Runway — base element styles + clay primitives
+   --------------------------------------------------------------------------
+   Consumes tokens.css. INVARIANT: no literal color, radius, shadow, or font
+   value appears in this file — every such value is a var(--…). That invariant
+   is the proof the retheme works: change tokens.css, and everything here
+   follows without editing a single rule. (`1px` hairlines are the only bare
+   lengths permitted.)
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  /* calm warmth: base → cream, top-left-lit */
+  background: linear-gradient(160deg, var(--color-bg), var(--b28-cream));
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  line-height: var(--leading-tight);
+  color: var(--color-text);
+}
+
+/* Visible keyboard focus everywhere — closes the scaffold a11y gap. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ---- Clay primitives (the b28 vocabulary; token-only) -------------------
+   composition over inheritance, light when unused. Products/games layer only
+   their own piece colors on top. */
+
+/* Raised card — light from top-left, warm cast bottom-right. */
+.clay-surface {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+/* Inset panel — the pressed-in counterpart of a surface. */
+.clay-well {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
+}
+
+/* Raised control. What looks pressable is pressable: :active genuinely
+   recesses (raised → inset). */
+.clay-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height);
+  padding: 0 var(--control-padding-x);
+  border: none;
+  border-radius: var(--control-radius);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-family: var(--font-body);
+  font-size: var(--control-font);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-raised);
+}
+
+.clay-button:active {
+  box-shadow: var(--shadow-inset);
+}
+
+/* Small pill — labels, tags, status. */
+.clay-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-soft);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-raised);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .clay-surface,
+  .clay-button {
+    transition: box-shadow var(--motion-duration) var(--motion-ease);
+  }
+}
