@@ -9,3 +9,10 @@
 #
 # Server-only signing key for the /api/receipt boundary. Never commit the real key.
 DEMO_SIGNING_KEY="replace-with-a-long-random-string"
+
+# Optional: put the boundary into a deliberate fault to watch `npm run ops:check`
+# catch it. Leave unset for a healthy demo. 'broken' serves a signed note whose
+# signature the check rejects; 'stalled' makes the boundary never answer, so the
+# check fails at its time budget instead of spinning. (Anything else is treated as
+# unset, so the server never breaks by accident.)
+# DEMO_FAULT="broken"
