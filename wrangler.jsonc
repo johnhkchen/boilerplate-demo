@@ -11,7 +11,8 @@
   // No account ID, API token, or secret value lives in this file. The D1 UUID is
   // a non-secret resource identifier added by Wrangler during the production
   // bootstrap. Remove `database_id` before deploying this template to a different
-  // account so Wrangler can provision a new database there.
+  // account so Wrangler can provision a new database there, and replace or remove
+  // the `routes` custom domain, which belongs to this project's zone.
   //
   // Backstage entries use D1 because they form a structured, append-and-retrieve
   // feed with schema enforcement and deterministic ordering.
@@ -20,6 +21,10 @@
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@astrojs/cloudflare/entrypoints/server",
+  // The branded public hostname. A Workers custom domain binds demo.b28.dev to
+  // this Worker: Cloudflare creates the DNS record and manages the edge cert, so
+  // promotion/rollback (Workers versions) never touches DNS.
+  "routes": [{ "pattern": "demo.b28.dev", "custom_domain": true }],
   "vars": {
     // Healthy by default. Local/integration runs may override this explicitly.
     "DEMO_FAULT": "off"
