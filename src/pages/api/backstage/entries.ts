@@ -4,12 +4,12 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { saveEntry } from '../../../lib/backstage-store';
+import { saveEntry } from '../../../lib/backstage-store.ts';
 import {
   toBackstageEntry,
   validateBackstageSubmission,
-} from '../../../lib/backstage-submission';
-import { guardPasscode } from '../../../lib/passcode';
+} from '../../../lib/backstage-submission.ts';
+import { guardPasscode } from '../../../lib/passcode.ts';
 
 const json = (body: unknown, status: number): Response =>
   new Response(JSON.stringify(body, null, 2), {
