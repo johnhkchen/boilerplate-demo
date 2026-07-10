@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-07-10T23:24:29.801Z",
+  "url": "ws://preview.t004.localhost:8787/?token=<redacted>",
+  "protocol": "vite-hmr",
+  "open": true,
+  "frames": [
+    {
+      "frame": "{\"type\":\"connected\"}",
+      "receivedAt": "2026-07-10T23:24:29.809Z"
+    },
+    {
+      "frame": "{\"type\":\"full-reload\"}",
+      "receivedAt": "2026-07-10T23:24:30.403Z"
+    }
+  ],
+  "editResponse": {
+    "status": 200,
+    "body": {
+      "marker": "HMR AFTER",
+      "changed": true
+    },
+    "receivedAt": "2026-07-10T23:24:30.401Z"
+  },
+  "editIssuedAt": "2026-07-10T23:24:30.310Z",
+  "openedAt": "2026-07-10T23:24:29.808Z",
+  "completedAt": "2026-07-10T23:24:30.403Z"
+}

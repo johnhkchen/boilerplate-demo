@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-07-10T23:24:58Z",
+  "sandboxId": "t004-spike",
+  "processes": [
+    {
+      "id": "astro-dev",
+      "command": "npm run dev",
+      "status": "running",
+      "readyInMs": 1182,
+      "listen": "0.0.0.0:4321"
+    },
+    {
+      "id": "code-server",
+      "command": "code-server --bind-addr 0.0.0.0:8080 --auth none --disable-telemetry /workspace/demo",
+      "status": "running",
+      "listen": "0.0.0.0:8080"
+    }
+  ],
+  "routes": {
+    "preview.t004.localhost": 4321,
+    "editor.t004.localhost": 8080
+  },
+  "versions": {
+    "sandboxSdkAndImage": "0.12.3",
+    "wrangler": "4.110.0",
+    "nodeInContainer": "22.23.1",
+    "astro": "7.0.7",
+    "codeServer": "4.127.0",
+    "code": "1.127.0"
+  },
+  "http": {
+    "previewStatus": 200,
+    "previewBeforeMarker": "HMR BEFORE",
+    "previewAfterMarker": "HMR AFTER",
+    "editorFinalStatusAfterRedirect": 200
+  },
+  "remoteAttempt": {
+    "workerName": "demo-runway-t004-sandbox-spike",
+    "workerVersionUploaded": "3bdb31b1-9ae9-44f8-b613-83a1561e84fb",
+    "containerImagePush": "rejected: Workers Paid plan required",
+    "cleanup": "Worker deleted; deployments lookup returns does-not-exist"
+  }
+}
