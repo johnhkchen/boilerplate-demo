@@ -1,0 +1,11 @@
+# .dev.vars.example — the checked-in environment template (NO real secrets).
+#
+# One-command local dev: copy this file to `.dev.vars` (gitignored) and set a real
+# value, then `npm run dev`. The Cloudflare adapter's platformProxy loads `.dev.vars`
+# and exposes these at `Astro.locals.runtime.env` for the /api/receipt boundary.
+#
+# In production the same variable is a Worker secret:
+#   npx wrangler secret put DEMO_SIGNING_KEY
+#
+# Server-only signing key for the /api/receipt boundary. Never commit the real key.
+DEMO_SIGNING_KEY="replace-with-a-long-random-string"
