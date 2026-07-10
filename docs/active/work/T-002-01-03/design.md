@@ -114,17 +114,20 @@ answered." The best-effort split keeps both truths.
 
 | Setting | Source (first wins) | Default |
 |---|---|---|
-| URL | `OPS_CHECK_URL`, else `${DEMO_BASE_URL}/api/receipt` | `http://127.0.0.1:4321/api/receipt` |
+| URL | `OPS_CHECK_URL`, else `${DEMO_BASE_URL}/api/receipt` | `http://localhost:4321/api/receipt` |
 | Time budget (ms) | `OPS_CHECK_TIMEOUT_MS` | `2000` |
 | Out-of-band key | `DEMO_SIGNING_KEY`, else parsed from `.dev.vars` | *(absent → verify skipped)* |
 
 Notes:
 
-- **Default host `127.0.0.1`, not `localhost`.** `localhost` can resolve to IPv6
-  `::1`; Astro's dev server binds IPv4 by default, so `::1` would refuse the
-  connection even while the demo is up — a confusing false "down." `127.0.0.1:4321`
-  matches what `astro dev` actually listens on. `DEMO_BASE_URL` lets `wrangler dev`
-  or CI point elsewhere.
+- **Default host `localhost`, matching Astro's advertised URL.** (Corrected during
+  Implement — the initial `127.0.0.1` guess was backwards.) Observed reality on
+  macOS: `astro dev` prints and binds `http://localhost:4321/`, and `localhost`
+  resolves to IPv6 `::1`, where the server listens — so a hard-coded `127.0.0.1`
+  (IPv4) is *refused* and a healthy demo looks "down". Defaulting to the exact host
+  Astro advertises (`localhost`) is what makes the zero-config run reliable; Node's
+  `fetch` resolves `localhost` to whichever family the server is on. `DEMO_BASE_URL`
+  lets `wrangler dev` or CI point elsewhere.
 - **`.dev.vars` fallback** means a plain local `npm run ops:check` re-verifies the
   signature against the *same* key the running dev server uses, with zero extra
   setup — the fallback parse is tiny, tolerant (missing file → skip), and lives only

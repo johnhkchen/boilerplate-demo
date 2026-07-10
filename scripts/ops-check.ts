@@ -14,10 +14,14 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { runBoundaryCheck, formatBoundaryTrace } from '../src/lib/ops-check.ts';
 
-// Default to the demo's own dev server. 127.0.0.1 (not "localhost") because
-// localhost can resolve to IPv6 ::1 while Astro's dev server binds IPv4 — which
-// would look "down" even when it is up. DEMO_BASE_URL / OPS_CHECK_URL override.
-const DEFAULT_BASE_URL = 'http://127.0.0.1:4321';
+// Default to the demo's own dev server, using the exact host Astro advertises
+// ("Local  http://localhost:4321/"). Matching that string is what makes the
+// default reliable: on macOS `localhost` often resolves to IPv6 ::1 and Astro's
+// dev server listens there, so a hard-coded 127.0.0.1 (IPv4) is refused and the
+// healthy demo looks "down". Node's fetch resolves `localhost` to whichever
+// family the server is on. DEMO_BASE_URL / OPS_CHECK_URL override for wrangler
+// dev, CI, or a deployed URL.
+const DEFAULT_BASE_URL = 'http://localhost:4321';
 const DEFAULT_TIME_BUDGET_MS = 2_000;
 
 // Read DEMO_SIGNING_KEY from a .dev.vars file so a plain local run verifies the
