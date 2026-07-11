@@ -20,6 +20,7 @@ import {
   isWebSocketUpgrade,
   parseSessionConfig,
   parseUpInput,
+  readBoundedJson,
   safeErrorMessage,
   sessionUrls,
 } from '../src/lib/session-lifecycle.ts';
@@ -68,6 +69,33 @@ test('up input accepts only one valid revision field', () => {
     assert.equal(result.status, 400);
     assert.equal(result.error.code, 'invalid_revision');
   }
+});
+
+test('bounded JSON reader accepts small bodies and rejects malformed or oversized streams', async () => {
+  const valid = await readBoundedJson(
+    new Request('https://example.com', {
+      method: 'POST',
+      body: JSON.stringify({ revision }),
+    }),
+  );
+  assert.deepEqual(valid, {
+    ok: true,
+    status: 200,
+    value: { revision },
+  });
+
+  const malformed = await readBoundedJson(
+    new Request('https://example.com', { method: 'POST', body: '{' }),
+  );
+  assert.equal(malformed.ok, false);
+  assert.equal(malformed.status, 400);
+
+  const oversized = await readBoundedJson(
+    new Request('https://example.com', { method: 'POST', body: '123456' }),
+    5,
+  );
+  assert.equal(oversized.ok, false);
+  assert.equal(oversized.status, 413);
 });
 
 test('session config produces exact fixed hosts from safe variables', () => {

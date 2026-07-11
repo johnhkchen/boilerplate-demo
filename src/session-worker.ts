@@ -27,6 +27,7 @@ import {
   jsonResponse,
   parseSessionConfig,
   parseUpInput,
+  readBoundedJson,
   safeErrorMessage,
   sessionUrls,
   success,
@@ -570,19 +571,9 @@ async function handleControl(
   operation: 'up' | 'status' | 'logs' | 'down',
 ): Promise<Response> {
   if (operation === 'up') {
-    const contentLength = Number(request.headers.get('content-length') ?? '0');
-    if (Number.isFinite(contentLength) && contentLength > 4096) {
-      return operationResponse(
-        failure(413, 'request_too_large', 'session up payload must be at most 4096 bytes'),
-      );
-    }
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return operationResponse(failure(400, 'invalid_json', 'request body must be JSON'));
-    }
-    const parsed = parseUpInput(body);
+    const body = await readBoundedJson(request);
+    if (!body.ok) return operationResponse(body);
+    const parsed = parseUpInput(body.value);
     if (!parsed.ok) return operationResponse(parsed);
     return operationResponse(await coordinator.up(parsed.value));
   }

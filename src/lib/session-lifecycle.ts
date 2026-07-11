@@ -14,6 +14,7 @@ export const CODE_SERVER_PORT = 8080;
 export const SESSION_READY_TIMEOUT_MS = 60_000;
 export const SESSION_PROVISION_TIMEOUT_MS = 180_000;
 export const SESSION_LOG_LIMIT_BYTES = 32 * 1024;
+export const SESSION_CONTROL_BODY_LIMIT_BYTES = 4 * 1024;
 export const SESSION_PROXY_TARGET_HEADER = 'x-demo-runway-session-target';
 
 export type SessionPhase =
@@ -96,6 +97,44 @@ export function parseUpInput(value: unknown): SessionOperationResult<SessionUpIn
   }
 
   return success({ revision: value.revision });
+}
+
+export async function readBoundedJson(
+  request: Request,
+  limit = SESSION_CONTROL_BODY_LIMIT_BYTES,
+): Promise<SessionOperationResult<unknown>> {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new Error('body limit must be a positive integer');
+  }
+  const declaredLength = Number(request.headers.get('content-length') ?? '0');
+  if (Number.isFinite(declaredLength) && declaredLength > limit) {
+    return failure(413, 'request_too_large', `request body must be at most ${limit} bytes`);
+  }
+  if (request.body === null) {
+    return failure(400, 'invalid_json', 'request body must be JSON');
+  }
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  let total = 0;
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    total += chunk.value.byteLength;
+    if (total > limit) {
+      await reader.cancel('request body limit exceeded');
+      return failure(413, 'request_too_large', `request body must be at most ${limit} bytes`);
+    }
+    text += decoder.decode(chunk.value, { stream: true });
+  }
+  text += decoder.decode();
+
+  try {
+    return success(JSON.parse(text) as unknown);
+  } catch {
+    return failure(400, 'invalid_json', 'request body must be JSON');
+  }
 }
 
 export function parseSessionConfig(input: {
