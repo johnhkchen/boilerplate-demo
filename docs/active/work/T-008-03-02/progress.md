@@ -2,8 +2,7 @@
 
 ## Status
 
-Implementation and all planned verification are complete. The implementation commit and Review
-remain.
+Implementation, all planned verification, commits, and Review are complete.
 
 ## Completed workflow phases
 
@@ -165,13 +164,23 @@ Passing steps:
 The server emitted the repository's existing Astro `session.driver` deprecation notice and
 `NO_COLOR`/`FORCE_COLOR` warnings. Neither affected the test result.
 
-## Remaining verification
+## Remaining
 
-- Run final `git diff --check`.
-- Inspect the scoped executable diff.
-- Confirm Lisa-owned ticket and provenance files remain unstaged.
-- Commit the implementation and progress artifact.
-- Write and commit `review.md`.
+None. Lisa owns artifact detection and subsequent ticket phase/status transitions.
+
+## Implementation commit
+
+- `e625edf test(T-008-03-02): prove backstage feed lifecycle`
+
+The commit contains only the backstage flow spec, its shared step contract, and this ticket's
+progress artifact. Lisa-owned ticket and provenance changes remained unstaged.
+
+## Final review
+
+- Wrote `review.md` with the acceptance assessment, file summary, verification evidence, coverage
+  strengths, gaps, open concerns, deviations, commits, and metadata ownership.
+- Confirmed no critical concern requires human attention.
+- Confirmed the remaining limitations are non-blocking and documented.
 
 ## Full verification
 
