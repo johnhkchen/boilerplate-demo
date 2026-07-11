@@ -1,0 +1,86 @@
+{
+  "ticket": "T-004-03-01",
+  "observedAt": "2026-07-11T00:14:41.685Z",
+  "scope": "local-docker",
+  "budgetMs": 60000,
+  "elapsedMs": 4430,
+  "withinBudget": true,
+  "image": {
+    "tag": "demo-runway-session:local",
+    "id": "sha256:73ca1d26a3cef18310f36ec62b8c3eff28b7ddf3a7d422edf426c8e24659d4be",
+    "architecture": "amd64",
+    "sizeBytes": 581788253,
+    "sandboxBase": "docker.io/cloudflare/sandbox:0.12.3",
+    "sandboxBaseDigest": "sha256:23f67e16131b780865a5fa5aa3c8607408a730105c248836409f4e02bb6bf042",
+    "nodeSource": "node:24.18.0-bookworm-slim",
+    "nodeSourceDigest": "sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5"
+  },
+  "docker": {
+    "serverVersion": "29.6.1",
+    "architecture": "aarch64",
+    "execution": "linux/amd64 emulation"
+  },
+  "sandbox": { "expected": "0.12.3", "observed": "0.12.3" },
+  "node": { "expected": "v24.18.0", "observed": "v24.18.0" },
+  "npm": {
+    "observed": "11.16.0",
+    "installPackages": 303,
+    "auditPackages": 304,
+    "auditVulnerabilities": 0
+  },
+  "codeServer": {
+    "expected": "4.127.0",
+    "observed": "4.127.0",
+    "asset": "code-server-4.127.0-linux-amd64.tar.gz",
+    "sha256": "2684cd3237181d837e8fe8757d98096e2d050a7d1687ee68ac39dd45a7a100d9",
+    "digestVerifiedDuringBuild": true
+  },
+  "entrypoint": ["/container-server/sandbox"],
+  "exposedPorts": ["3000/tcp", "4321/tcp", "8080/tcp"],
+  "http": {
+    "status": 200,
+    "marker": "Demo Runway",
+    "markerFound": true,
+    "serverCommand": "npm run dev -- --host 0.0.0.0 --port 4321",
+    "projectPath": "/opt/demo-runway"
+  },
+  "configValidation": {
+    "command": "npm run session:validate",
+    "wranglerVersion": "4.110.0",
+    "dryRun": true,
+    "workerBundleBytes": 587336,
+    "workerBundleGzipBytes": 127211,
+    "durableObjectBinding": { "name": "Sandbox", "className": "Sandbox" },
+    "container": {
+      "className": "Sandbox",
+      "dockerfile": "Dockerfile.session",
+      "instanceType": "basic",
+      "maxInstances": 1
+    },
+    "migration": { "tag": "v1", "newSqliteClasses": ["Sandbox"] },
+    "passed": true,
+    "deployed": false
+  },
+  "safety": {
+    "gitAbsent": true,
+    "devVarsAbsent": true,
+    "envAbsent": true,
+    "wranglerStateAbsent": true,
+    "bakedDependenciesPresent": true,
+    "realSourcePresent": true,
+    "imageHistorySensitiveMarkerMatches": 0
+  },
+  "cleanup": {
+    "containerRemoved": true,
+    "residualMeasurementContainers": 0,
+    "remoteResourcesCreated": false
+  },
+  "preflight": { "skipBuildElapsedMs": 4553, "passed": true },
+  "limitations": [
+    "Local Docker used amd64 emulation on an arm64 host.",
+    "Cloudflare image pull and placement latency were not measured.",
+    "The configured basic instance's production CPU, memory, and disk behavior were not measured.",
+    "The account still requires Workers Paid Containers entitlement for a remote run.",
+    "The measurement starts from an already built local image; Docker build time is intentionally outside the session cold-start budget."
+  ]
+}
