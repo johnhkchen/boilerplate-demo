@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation and verification are complete. Review remains.
+Implementation, verification, and Review are complete.
 
 ## Completed
 
@@ -112,8 +112,7 @@ exit 0
 
 ## Remaining
 
-- Commit the verified implementation unit.
-- Write Review and its handoff commit.
+None. Lisa owns ticket phase and status transitions after `review.md` is detected.
 
 ## Deviations
 
@@ -127,3 +126,4 @@ exit 0
 ## Commits
 
 - `f830b43 docs(T-008-03-01): research through implementation plan`
+- `0ebcb29 feat(T-008-03-01): unify backstage dashboard`
