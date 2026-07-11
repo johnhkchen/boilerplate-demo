@@ -10,6 +10,8 @@ export const FLOW_PROJECT = {
 export const FLOW_STEP = {
   loadDemo: 'load the public demo',
   awaitReceipt: 'await receipt boundary response',
+  activateAction: 'activate the labeled primary action',
+  observeStall: 'observe the stalled boundary stays narrated',
 } as const;
 
 // The backstage form's phone-flow steps, named like FLOW_STEP so failures read plainly.
@@ -24,12 +26,22 @@ export const BACKSTAGE_STEP = {
 // drift. This is a local test knock, not a secret.
 export const BACKSTAGE_PASSCODE = 'playwright-backstage-knock';
 
+// The accessible name of the index page's one primary action. Authored in
+// src/pages/index.astro's PRIMARY_ACTION_LABEL template slot; a generated demo that
+// renames the slot must update this const in the same change, or the suite fails on
+// the named activation step — that legible failure is this contract enforcing itself.
+export const PRIMARY_ACTION_NAME = 'Ask for a fresh note';
+
 // Nested budgets keep the most useful failure closest to the cause while outer
 // limits guarantee that setup or teardown cannot leave the whole run hanging.
 export const FLOW_BUDGET_MS = {
   assertion: 8_000,
   action: 10_000,
   receiptStep: 5_000,
+  // One activation round trip of the labeled primary action — same class as
+  // receiptStep. Worst-case step sums stay within the unchanged test cap
+  // (action 10s + receiptStep 5s + actionStep 5s = test 20s).
+  actionStep: 5_000,
   test: 20_000,
   // The backstage dev server applies the D1 migration before `astro dev` is ready, so its
   // startup budget is larger than the receipt-only flow needs.
