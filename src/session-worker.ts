@@ -8,6 +8,8 @@ import {
   CODE_SERVER_PROCESS_ID,
   SESSION_ASTRO_CONFIG_PATH,
   SESSION_COORDINATOR_NAME,
+  SESSION_PATCH_LIMIT_BYTES,
+  SESSION_PRESERVATION_PATH,
   SESSION_PROVISION_TIMEOUT_MS,
   SESSION_PROXY_TARGET_HEADER,
   SESSION_READY_TIMEOUT_MS,
@@ -20,21 +22,30 @@ import {
   buildAstroConfig,
   buildCodeServerCommand,
   buildProvisionCommand,
+  buildPreservationCommand,
   classifyControlRequest,
   classifyProxyHost,
   failure,
   isWebSocketUpgrade,
   jsonResponse,
   parseSessionConfig,
+  parseDownInput,
+  parsePreservationInspection,
+  parseRuntimeSecrets,
   parseUpInput,
   readBoundedJson,
+  redactSecrets,
   safeErrorMessage,
+  safePublicError,
   sessionUrls,
   success,
   type ProxyTarget,
+  type RuntimeSecrets,
   type SessionConfig,
+  type SessionDownInput,
   type SessionOperationResult,
   type SessionProcessSnapshot,
+  type SessionPatch,
   type SessionRecord,
   type SessionUpInput,
 } from './lib/session-lifecycle';
@@ -76,7 +87,10 @@ type DownPayload = {
   ok: true;
   operation: 'down';
   changed: boolean;
-  phase: 'idle';
+  phase: SessionRecord['phase'] | 'idle';
+  forced?: boolean;
+  preservation?: SessionPatch;
+  preservationSha256?: string;
 };
 
 type EnsureProcessResult = { process: Process; changed: boolean };
@@ -90,6 +104,20 @@ class SessionRuntimeError extends Error {
     super(message);
     this.name = 'SessionRuntimeError';
   }
+}
+
+function decodeBase64(value: string): Uint8Array {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+async function sha256Hex(value: Uint8Array): Promise<string> {
+  const copy = new Uint8Array(value.byteLength);
+  copy.set(value);
+  const digest = await crypto.subtle.digest('SHA-256', copy.buffer);
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 // One strongly consistent coordinator owns the desired state for the MVP's
@@ -130,6 +158,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
     sandbox: ReturnType<SessionCoordinator['sandbox']>,
     revision: string,
     config: SessionConfig,
+    runtimeSecrets: RuntimeSecrets,
   ): Promise<boolean> {
     const result = await sandbox.exec(buildProvisionCommand(), {
       timeout: SESSION_PROVISION_TIMEOUT_MS,
@@ -139,8 +168,9 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
       },
     });
     if (!result.success) {
-      const details = safeErrorMessage(
+      const details = safePublicError(
         `${result.stderr}\n${result.stdout}`,
+        runtimeSecrets,
         500,
       );
       if (result.exitCode === 42) {
@@ -187,6 +217,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
     command: string,
     port: number,
     readiness: 'http' | 'tcp',
+    runtimeSecrets: RuntimeSecrets,
   ): Promise<EnsureProcessResult> {
     const existing = (await sandbox.listProcesses()).find(
       (process) => process.id === processId,
@@ -209,7 +240,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
             component: 'session-coordinator',
             operation: 'process-cleanup',
             processId,
-            message: safeErrorMessage(error),
+            message: safePublicError(error, runtimeSecrets),
           }),
         );
       }
@@ -220,6 +251,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
       cwd: SESSION_WORKTREE,
       processId,
       autoCleanup: false,
+      env: runtimeSecrets,
     });
     await process.waitForPort(port, {
       mode: readiness,
@@ -232,12 +264,14 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
   private async reconcile(
     revision: string,
     config: SessionConfig,
+    runtimeSecrets: RuntimeSecrets,
   ): Promise<{ changed: boolean; processes: SessionProcessSnapshot[] }> {
     const sandbox = this.sandbox();
     const workspaceChanged = await this.provisionWorkspace(
       sandbox,
       revision,
       config,
+      runtimeSecrets,
     );
     const astro = await this.ensureProcess(
       sandbox,
@@ -245,6 +279,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
       buildAstroCommand(),
       ASTRO_PORT,
       'http',
+      runtimeSecrets,
     );
     const editor = await this.ensureProcess(
       sandbox,
@@ -252,6 +287,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
       buildCodeServerCommand(),
       CODE_SERVER_PORT,
       'tcp',
+      runtimeSecrets,
     );
     return {
       changed: workspaceChanged || astro.changed || editor.changed,
@@ -262,7 +298,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
     };
   }
 
-  up(input: SessionUpInput): Promise<SessionOperationResult<UpPayload>> {
+  up(input: SessionUpInput, runtimeSecrets: RuntimeSecrets): Promise<SessionOperationResult<UpPayload>> {
     return this.enqueueMutation(async () => {
       const config = this.config();
       const existing = await this.record();
@@ -295,7 +331,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
       );
 
       try {
-        const reconciled = await this.reconcile(input.revision, config);
+        const reconciled = await this.reconcile(input.revision, config, runtimeSecrets);
         const ready: SessionRecord = {
           ...provisioning,
           phase: 'ready',
@@ -326,13 +362,13 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
             : new SessionRuntimeError(
                 'session_start_failed',
                 502,
-                safeErrorMessage(error),
+                safePublicError(error, runtimeSecrets),
               );
         const failed: SessionRecord = {
           ...provisioning,
           phase: 'failed',
           updatedAt: new Date().toISOString(),
-          error: safeErrorMessage(runtimeError),
+          error: safePublicError(runtimeError, runtimeSecrets),
         };
         await this.storeRecord(failed);
         console.error(
@@ -343,10 +379,14 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
             slug: config.slug,
             revision: input.revision,
             code: runtimeError.code,
-            message: safeErrorMessage(runtimeError),
+            message: safePublicError(runtimeError, runtimeSecrets),
           }),
         );
-        return failure(runtimeError.status, runtimeError.code, runtimeError.message);
+        return failure(
+          runtimeError.status,
+          runtimeError.code,
+          safePublicError(runtimeError, runtimeSecrets),
+        );
       }
     });
   }
@@ -381,7 +421,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
     }
   }
 
-  async logs(): Promise<SessionOperationResult<LogsPayload>> {
+  async logs(runtimeSecrets: RuntimeSecrets): Promise<SessionOperationResult<LogsPayload>> {
     const record = await this.record();
     if (record === undefined) {
       return success({
@@ -413,8 +453,8 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
           ]);
           return {
             ...snapshot,
-            stdout: boundedLog(output.stdout),
-            stderr: boundedLog(output.stderr),
+            stdout: boundedLog(redactSecrets(output.stdout, runtimeSecrets)),
+            stderr: boundedLog(redactSecrets(output.stderr, runtimeSecrets)),
           };
         }),
       );
@@ -425,11 +465,73 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
         processes: entries,
       });
     } catch (error: unknown) {
-      return failure(503, 'logs_unavailable', safeErrorMessage(error));
+      return failure(503, 'logs_unavailable', safePublicError(error, runtimeSecrets));
     }
   }
 
-  down(): Promise<SessionOperationResult<DownPayload>> {
+  private async inspectPreservation(
+    record: SessionRecord,
+    runtimeSecrets: RuntimeSecrets,
+  ): Promise<SessionOperationResult<{ patch: SessionPatch | null }>> {
+    const sandbox = this.sandbox();
+    const result = await sandbox.exec(buildPreservationCommand(), {
+      timeout: SESSION_READY_TIMEOUT_MS,
+    });
+    if (!result.success) {
+      return failure(
+        502,
+        'preservation_failed',
+        safePublicError(`${result.stderr}\n${result.stdout}`, runtimeSecrets),
+      );
+    }
+
+    let inspection: ReturnType<typeof parsePreservationInspection>;
+    try {
+      inspection = parsePreservationInspection(result.stdout);
+    } catch (error: unknown) {
+      return failure(502, 'preservation_failed', safePublicError(error, runtimeSecrets));
+    }
+    if (inspection.baseRevision !== record.revision) {
+      return failure(
+        409,
+        'workspace_revision_changed',
+        'workspace revision changed; session was retained',
+      );
+    }
+    if (inspection.state === 'clean') return success({ patch: null });
+    if (inspection.bytes > SESSION_PATCH_LIMIT_BYTES) {
+      return failure(
+        409,
+        'preservation_too_large',
+        `uncommitted patch exceeds ${SESSION_PATCH_LIMIT_BYTES} bytes; commit it manually or use explicit force`,
+      );
+    }
+
+    try {
+      const file = await sandbox.readFile(SESSION_PRESERVATION_PATH, { encoding: 'base64' });
+      if (!file.success) throw new Error('patch read failed');
+      const bytes = decodeBase64(file.content);
+      const sha256 = await sha256Hex(bytes);
+      if (bytes.byteLength !== inspection.bytes || sha256 !== inspection.sha256) {
+        throw new Error('patch verification failed');
+      }
+      return success({
+        patch: {
+          baseRevision: inspection.baseRevision,
+          sha256,
+          bytes: bytes.byteLength,
+          contentBase64: file.content,
+        },
+      });
+    } catch (error: unknown) {
+      return failure(502, 'preservation_failed', safePublicError(error, runtimeSecrets));
+    }
+  }
+
+  down(
+    input: SessionDownInput,
+    runtimeSecrets: RuntimeSecrets,
+  ): Promise<SessionOperationResult<DownPayload>> {
     return this.enqueueMutation(async () => {
       const record = await this.record();
       if (record === undefined) {
@@ -439,6 +541,39 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
           changed: false,
           phase: 'idle',
         });
+      }
+
+      const forced = input.mode === 'destroy' && 'force' in input;
+      let preservationSha256: string | undefined;
+      if (!forced) {
+        const preservation = await this.inspectPreservation(record, runtimeSecrets);
+        if (!preservation.ok) return preservation;
+        if (input.mode === 'preserve' && preservation.value.patch !== null) {
+          return success({
+            ok: true,
+            operation: 'down',
+            changed: false,
+            phase: record.phase,
+            preservation: preservation.value.patch,
+          });
+        }
+        if (input.mode === 'destroy') {
+          if (preservation.value.patch === null) {
+            return failure(
+              409,
+              'workspace_changed',
+              'workspace is now clean and no longer matches the exported patch; rerun down',
+            );
+          }
+          if (preservation.value.patch.sha256 !== input.preservationSha256) {
+            return failure(
+              409,
+              'workspace_changed',
+              'workspace changed after export; the session was retained and must be exported again',
+            );
+          }
+          preservationSha256 = preservation.value.patch.sha256;
+        }
       }
 
       await this.storeRecord({
@@ -456,6 +591,8 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
             phase: 'idle',
             slug: record.slug,
             revision: record.revision,
+            forced,
+            ...(preservationSha256 === undefined ? {} : { preservationSha256 }),
           }),
         );
         return success({
@@ -463,9 +600,11 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
           operation: 'down',
           changed: true,
           phase: 'idle',
+          ...(forced ? { forced: true } : {}),
+          ...(preservationSha256 === undefined ? {} : { preservationSha256 }),
         });
       } catch (error: unknown) {
-        const message = safeErrorMessage(error);
+        const message = safePublicError(error, runtimeSecrets);
         await this.storeRecord({
           ...record,
           phase: 'failed',
@@ -545,12 +684,12 @@ function operationResponse<T>(result: SessionOperationResult<T>): Response {
     : jsonResponse({ ok: false, error: result.error }, { status: result.status });
 }
 
-function invalidConfiguration(error: unknown): Response {
+function invalidConfiguration(): Response {
   console.error(
     JSON.stringify({
       component: 'session-worker',
       operation: 'configuration',
-      message: safeErrorMessage(error),
+      message: 'session Worker configuration is invalid',
     }),
   );
   return jsonResponse(
@@ -558,7 +697,7 @@ function invalidConfiguration(error: unknown): Response {
       ok: false,
       error: {
         code: 'session_worker_misconfigured',
-        message: safeErrorMessage(error),
+        message: 'session Worker configuration is invalid',
       },
     },
     { status: 500 },
@@ -569,26 +708,33 @@ async function handleControl(
   request: Request,
   coordinator: DurableObjectStub<SessionCoordinator>,
   operation: 'up' | 'status' | 'logs' | 'down',
+  runtimeSecrets: RuntimeSecrets,
 ): Promise<Response> {
   if (operation === 'up') {
     const body = await readBoundedJson(request);
     if (!body.ok) return operationResponse(body);
     const parsed = parseUpInput(body.value);
     if (!parsed.ok) return operationResponse(parsed);
-    return operationResponse(await coordinator.up(parsed.value));
+    return operationResponse(await coordinator.up(parsed.value, runtimeSecrets));
   }
   if (operation === 'status') return operationResponse(await coordinator.status());
-  if (operation === 'logs') return operationResponse(await coordinator.logs());
-  return operationResponse(await coordinator.down());
+  if (operation === 'logs') return operationResponse(await coordinator.logs(runtimeSecrets));
+  const body = await readBoundedJson(request);
+  if (!body.ok) return operationResponse(body);
+  const parsed = parseDownInput(body.value);
+  if (!parsed.ok) return operationResponse(parsed);
+  return operationResponse(await coordinator.down(parsed.value, runtimeSecrets));
 }
 
 const handler = {
   async fetch(request: Request, env: SessionWorkerEnv): Promise<Response> {
     let config: SessionConfig;
+    let runtimeSecrets: RuntimeSecrets;
     try {
       config = parseSessionConfig(env);
-    } catch (error: unknown) {
-      return invalidConfiguration(error);
+      runtimeSecrets = parseRuntimeSecrets(env.SESSION_RUNTIME_SECRETS);
+    } catch {
+      return invalidConfiguration();
     }
 
     const url = new URL(request.url);
@@ -596,19 +742,22 @@ const handler = {
     const coordinator = env.SESSION_COORDINATOR.getByName(SESSION_COORDINATOR_NAME);
     if (control.kind === 'operation') {
       try {
-        return await handleControl(request, coordinator, control.operation);
+        return await handleControl(request, coordinator, control.operation, runtimeSecrets);
       } catch (error: unknown) {
         console.error(
           JSON.stringify({
             component: 'session-worker',
             operation: control.operation,
-            message: safeErrorMessage(error),
+            message: safePublicError(error, runtimeSecrets),
           }),
         );
         return jsonResponse(
           {
             ok: false,
-            error: { code: 'session_operation_failed', message: safeErrorMessage(error) },
+            error: {
+              code: 'session_operation_failed',
+              message: safePublicError(error, runtimeSecrets),
+            },
           },
           { status: 502 },
         );

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 
 import {
@@ -363,6 +364,12 @@ test('CLI parser maps the four commands to the control contract', () => {
     method: 'POST',
     path: '/__session/down',
   });
+  assert.deepEqual(parseSessionArguments(['down', '--force']), {
+    operation: 'down',
+    method: 'POST',
+    path: '/__session/down',
+    force: true,
+  });
   for (const argv of [[], ['up'], ['up', 'main'], ['status', 'extra'], ['wat']]) {
     assert.throws(() => parseSessionArguments(argv));
   }
@@ -428,4 +435,147 @@ test('CLI reports Worker and invocation failures without throwing', async () => 
   assert.equal(usageExit, 2);
   assert.match(usageWrites.stderr, /40-character/);
   assert.match(usageWrites.stderr, /usage:/);
+});
+
+test('CLI safe down destroys a clean workspace in one explicit preserve request', async () => {
+  const writes = { stdout: '', stderr: '' };
+  const requests = [];
+  const exitCode = await runSessionCommand({
+    argv: ['down'],
+    workerUrl: 'https://sessions.example.com',
+    fetchImpl: async (input, init) => {
+      requests.push({ input: String(input), init });
+      return Response.json({ ok: true, operation: 'down', changed: true, phase: 'idle' });
+    },
+    stdout: { write: (value) => ((writes.stdout += value), true) },
+    stderr: { write: (value) => ((writes.stderr += value), true) },
+  });
+  assert.equal(exitCode, 0);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].init.body, JSON.stringify({ mode: 'preserve' }));
+  assert.match(writes.stdout, /"phase": "idle"/);
+  assert.equal(writes.stderr, '');
+});
+
+test('CLI safe down persists a verified dirty patch before digest-acknowledged destroy', async () => {
+  const content = Buffer.from('diff --git a/demo.txt b/demo.txt\n');
+  const sha256 = createHash('sha256').update(content).digest('hex');
+  const writes = { stdout: '', stderr: '', files: [] };
+  const bodies = [];
+  const exitCode = await runSessionCommand({
+    argv: ['down'],
+    workerUrl: 'https://sessions.example.com',
+    artifactDirectory: '/safe',
+    writePatch: (path, value) => writes.files.push({ path, value: Buffer.from(value) }),
+    fetchImpl: async (_input, init) => {
+      bodies.push(JSON.parse(init.body));
+      if (bodies.length === 1) {
+        return Response.json({
+          ok: true,
+          operation: 'down',
+          changed: false,
+          phase: 'ready',
+          preservation: {
+            baseRevision: revision,
+            sha256,
+            bytes: content.byteLength,
+            contentBase64: content.toString('base64'),
+          },
+        });
+      }
+      return Response.json({
+        ok: true,
+        operation: 'down',
+        changed: true,
+        phase: 'idle',
+        preservationSha256: sha256,
+      });
+    },
+    stdout: { write: (value) => ((writes.stdout += value), true) },
+    stderr: { write: (value) => ((writes.stderr += value), true) },
+  });
+  assert.equal(exitCode, 0);
+  assert.deepEqual(bodies, [
+    { mode: 'preserve' },
+    { mode: 'destroy', preservationSha256: sha256 },
+  ]);
+  assert.equal(writes.files.length, 1);
+  assert.match(writes.files[0].path, /demo-runway-session-0123456789ab-[0-9a-f]{12}\.patch$/);
+  assert.deepEqual(writes.files[0].value, content);
+  assert.match(writes.stdout, /"path": "\/safe\//);
+  assert.doesNotMatch(writes.stdout, /contentBase64/);
+  assert.equal(writes.stderr, '');
+});
+
+test('CLI refuses destroy when patch verification or local persistence fails', async () => {
+  let requests = 0;
+  const mismatch = await runSessionCommand({
+    argv: ['down'],
+    workerUrl: 'https://sessions.example.com',
+    fetchImpl: async () => {
+      requests += 1;
+      return Response.json({
+        ok: true,
+        preservation: {
+          baseRevision: revision,
+          sha256: 'a'.repeat(64),
+          bytes: 5,
+          contentBase64: Buffer.from('patch').toString('base64'),
+        },
+      });
+    },
+    stdout: { write: () => true },
+    stderr: { write: () => true },
+  });
+  assert.equal(mismatch, 1);
+  assert.equal(requests, 1);
+
+  const content = Buffer.from('patch');
+  const sha256 = createHash('sha256').update(content).digest('hex');
+  requests = 0;
+  const writeFailure = await runSessionCommand({
+    argv: ['down'],
+    workerUrl: 'https://sessions.example.com',
+    fetchImpl: async () => {
+      requests += 1;
+      return Response.json({
+        ok: true,
+        preservation: {
+          baseRevision: revision,
+          sha256,
+          bytes: content.byteLength,
+          contentBase64: content.toString('base64'),
+        },
+      });
+    },
+    writePatch: () => {
+      throw new Error('disk full');
+    },
+    stdout: { write: () => true },
+    stderr: { write: () => true },
+  });
+  assert.equal(writeFailure, 1);
+  assert.equal(requests, 1);
+});
+
+test('CLI force down sends explicit destructive confirmation and redacts configured values', async () => {
+  const secret = 'super-secret-value';
+  const writes = { stdout: '', stderr: '' };
+  let body;
+  const exitCode = await runSessionCommand({
+    argv: ['down', '--force'],
+    workerUrl: 'https://sessions.example.com',
+    runtimeSecretsJson: JSON.stringify({ DEMO_TOKEN: secret }),
+    fetchImpl: async (_input, init) => {
+      body = JSON.parse(init.body);
+      return Response.json({ ok: true, forced: true, diagnostic: secret });
+    },
+    stdout: { write: (value) => ((writes.stdout += value), true) },
+    stderr: { write: (value) => ((writes.stderr += value), true) },
+  });
+  assert.equal(exitCode, 0);
+  assert.deepEqual(body, { mode: 'destroy', force: true });
+  assert.doesNotMatch(writes.stdout, new RegExp(secret));
+  assert.match(writes.stdout, /\[REDACTED\]/);
+  assert.equal(writes.stderr, '');
 });

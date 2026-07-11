@@ -27,12 +27,12 @@ Only explicit ticket files will be staged for commits.
 - [x] Complete `structure.md`.
 - [x] Complete `plan.md`.
 - [x] Add and test pure runtime-secret contracts.
-- [ ] Inject launch secrets into managed services.
-- [ ] Redact secret values from logs/errors/API/CLI.
+- [x] Inject launch secrets into managed services.
+- [x] Redact secret values from logs/errors/API/CLI.
 - [x] Add and test typed teardown preservation contracts.
-- [ ] Implement coordinator patch export/digest acknowledgement.
-- [ ] Implement CLI patch persistence and explicit force path.
-- [ ] Regenerate Sessions Worker bindings.
+- [x] Implement coordinator patch export/digest acknowledgement.
+- [x] Implement CLI patch persistence and explicit force path.
+- [x] Regenerate Sessions Worker bindings.
 - [ ] Prove patch recovery with a local Git fixture.
 - [ ] Update durable lifecycle documentation.
 - [ ] Run full validation.
@@ -44,9 +44,9 @@ Only explicit ticket files will be staged for commits.
 |---|---|
 | instruction/ticket read | complete |
 | initial worktree isolation | complete; unrelated changes recorded above |
-| targeted lifecycle tests | 22/22 pass after pure secret/down contracts |
+| targeted lifecycle tests | 26/26 pass after Worker/CLI safety implementation |
 | full `npm test` | pending |
-| `npm run session:validate` | pending |
+| `npm run session:validate` | pass; types current, TypeScript clean, Worker/image dry run succeeds |
 | `npm run typecheck` | pending |
 | `npm run deploy:dry` | pending |
 | Git patch recovery fixture | pending |
@@ -59,4 +59,5 @@ None at implementation start.
 ## Commit ledger
 
 - `1034245` — RDSPI blueprint artifacts.
-- Pending: pure secret and teardown contracts.
+- `6506457` — pure secret and teardown contracts.
+- Pending: launch injection, redaction, and verified teardown implementation.

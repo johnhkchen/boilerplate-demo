@@ -18,9 +18,10 @@
     "SESSION_DOMAIN": "b28.dev",
     "SESSION_REPOSITORY_URL": "https://github.com/johnhkchen/boilerplate-demo.git"
   },
-  // Do not infer the stable App Worker's local .dev.vars keys into this
-  // separate Worker. Session launch secrets are defined by later lifecycle work.
-  "secrets": { "required": [] },
+  // A JSON object of environment-name to secret value, configured with
+  // `wrangler secret put`. Values are injected only when session services start.
+  // Use `{}` when this demo needs no runtime credentials.
+  "secrets": { "required": ["SESSION_RUNTIME_SECRETS"] },
   "containers": [
     {
       "class_name": "Sandbox",
