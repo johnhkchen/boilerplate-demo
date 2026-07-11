@@ -7,9 +7,11 @@ Implementation is complete.
 Backstage now presents one short orientation, one explicit safety rule, one gate instruction, and
 short visitor-owned dashboard states. The one-passcode checklist behavior is unchanged.
 
-Implementation commit:
+Implementation commits:
 
 `4c91ef5 feat(T-009-02-01): conform backstage copy`
+
+`5253d7b fix(T-009-02-01): shorten delete confirmation`
 
 ## Completed plan steps
 
@@ -143,6 +145,12 @@ Key final counts:
 
 The orientation layer was also manually reviewed for shape and adjacency. Purpose, safety, and
 gate instruction each have one distinct job; the old multi-string unlock lecture is gone.
+
+During Review, the retained delete confirmation exposed a gap in this first manual shape pass: it
+fit the numeric status ceiling but contained two sentences. It was replaced with the one-sentence
+question `Delete entry {id} for good?`, which is 4 authored words / 22 characters around the
+opaque ID. The focused flow was rerun and passed. The numeric result remains 62/62, and the final
+shape review now passes.
 
 ### 8. Static and type checks run
 
@@ -282,6 +290,9 @@ Commit `4c91ef5` contains:
 
 `git show --check` passed.
 
+Review then produced the small corrective commit `5253d7b`, changing only the delete-confirmation
+literal in `src/pages/backstage.astro`. Its focused string check and `git show --check` passed.
+
 ## Plan deviations
 
 ### Leak-check scope clarification
@@ -307,6 +318,16 @@ also covered live response bodies. A separate duplicate recursive scanner was un
 The Plan did not require a new committed copy assertion. The fixed-string audit and built-output
 check directly verified the note. The canonical standard intentionally retains human review rather
 than adding a one-page automated voice gate.
+
+### Review-discovered confirmation shape correction
+
+Design and the initial implementation retained `Delete entry {id}? This can't be undone.` because
+it was short and preserved destructive-action meaning. Review correctly found that it violated
+the status/confirmation one-sentence shape even though it passed numeric limits.
+
+The final copy is `Delete entry {id} for good?`. It remains direct, preserves the irreversible
+meaning in kitchen-table English, fits the envelope, and passed a fresh phone flow. No handler or
+dialog behavior changed.
 
 ## Files modified in Implement
 
