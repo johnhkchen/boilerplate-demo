@@ -33,6 +33,7 @@ import {
   sessionUrls,
 } from '../src/lib/session-lifecycle.ts';
 import {
+  parseSessionAccessToken,
   parseSessionArguments,
   parseSessionWorkerUrl,
   runSessionCommand,
@@ -388,6 +389,37 @@ test('CLI worker URL accepts only credential-free HTTP(S) origins', () => {
   ]) {
     assert.throws(() => parseSessionWorkerUrl(value));
   }
+});
+
+test('CLI Access token accepts only a bounded non-whitespace application token', () => {
+  const token = 'header.payload.signature';
+  assert.equal(parseSessionAccessToken(undefined), undefined);
+  assert.equal(parseSessionAccessToken(token), token);
+  for (const value of ['', 'too-short', ` ${token}`, `${token}\n`, 'x'.repeat(16 * 1024 + 1)]) {
+    assert.throws(() => parseSessionAccessToken(value));
+  }
+});
+
+test('CLI sends and redacts an interactive identity Access token', async () => {
+  const token = 'header.payload.identity-signature';
+  const writes = { stdout: '', stderr: '' };
+  let observedToken;
+  const exitCode = await runSessionCommand({
+    argv: ['status'],
+    workerUrl: 'https://demo-session.example.test',
+    accessToken: token,
+    fetchImpl: async (_input, init) => {
+      observedToken = new Headers(init.headers).get('cf-access-token');
+      return Response.json({ ok: true, diagnostic: token });
+    },
+    stdout: { write: (value) => ((writes.stdout += value), true) },
+    stderr: { write: (value) => ((writes.stderr += value), true) },
+  });
+  assert.equal(exitCode, 0);
+  assert.equal(observedToken, token);
+  assert.doesNotMatch(writes.stdout, new RegExp(token.replaceAll('.', '\\.')));
+  assert.match(writes.stdout, /\[REDACTED\]/);
+  assert.equal(writes.stderr, '');
 });
 
 test('CLI up sends the exact JSON request and prints successful JSON', async () => {

@@ -31,6 +31,7 @@ export type SessionCommandOptions = {
   artifactDirectory?: string;
   writePatch?: (path: string, content: Uint8Array) => void;
   runtimeSecretsJson?: string;
+  accessToken?: string;
 };
 
 export const SESSION_USAGE = `usage:
@@ -95,25 +96,47 @@ export function parseSessionWorkerUrl(value: string | undefined): URL {
   return url;
 }
 
+export function parseSessionAccessToken(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  if (
+    value.length < 16 ||
+    value.length > 16 * 1024 ||
+    value !== value.trim() ||
+    /\s/.test(value)
+  ) {
+    throw new TypeError('SESSION_ACCESS_TOKEN must be a valid Cloudflare Access application token');
+  }
+  return value;
+}
+
 export async function runSessionCommand(options: SessionCommandOptions): Promise<number> {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
   let command: SessionCliCommand;
   let origin: URL;
   let runtimeSecrets: RuntimeSecrets;
+  let accessToken: string | undefined;
   try {
     command = parseSessionArguments(options.argv);
     origin = parseSessionWorkerUrl(options.workerUrl ?? process.env.SESSION_WORKER_URL);
     const secretsJson = options.runtimeSecretsJson ?? process.env.SESSION_RUNTIME_SECRETS;
     runtimeSecrets = secretsJson === undefined ? {} : parseRuntimeSecrets(secretsJson);
+    accessToken = parseSessionAccessToken(
+      options.accessToken ?? process.env.SESSION_ACCESS_TOKEN,
+    );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     stderr.write(`${message}\n${SESSION_USAGE}\n`);
     return 2;
   }
+  const redactionSecrets =
+    accessToken === undefined
+      ? runtimeSecrets
+      : { ...runtimeSecrets, SESSION_ACCESS_TOKEN: accessToken };
 
   const request = async (bodyValue?: unknown): Promise<{ response: Response; payload: unknown }> => {
     const headers = new Headers({ accept: 'application/json' });
+    if (accessToken !== undefined) headers.set('cf-access-token', accessToken);
     const body = bodyValue === undefined ? undefined : JSON.stringify(bodyValue);
     if (body !== undefined) headers.set('content-type', 'application/json');
     const response = await (options.fetchImpl ?? fetch)(new URL(command.path, origin), {
@@ -130,7 +153,7 @@ export async function runSessionCommand(options: SessionCommandOptions): Promise
   };
 
   const fail = (message: unknown): number => {
-    const safe = redactSecrets(message instanceof Error ? message.message : String(message), runtimeSecrets);
+    const safe = redactSecrets(message instanceof Error ? message.message : String(message), redactionSecrets);
     stderr.write(`session ${command.operation} failed: ${safe}\n`);
     return 1;
   };
@@ -139,7 +162,7 @@ export async function runSessionCommand(options: SessionCommandOptions): Promise
     if (command.operation !== 'down') {
       const body = command.revision === undefined ? undefined : { revision: command.revision };
       const result = await request(body);
-      const formatted = `${redactSecrets(JSON.stringify(result.payload, null, 2), runtimeSecrets)}\n`;
+      const formatted = `${redactSecrets(JSON.stringify(result.payload, null, 2), redactionSecrets)}\n`;
       if (!result.response.ok) {
         stderr.write(formatted);
         return 1;
@@ -150,7 +173,7 @@ export async function runSessionCommand(options: SessionCommandOptions): Promise
 
     if (command.force === true) {
       const result = await request({ mode: 'destroy', force: true });
-      const formatted = `${redactSecrets(JSON.stringify(result.payload, null, 2), runtimeSecrets)}\n`;
+      const formatted = `${redactSecrets(JSON.stringify(result.payload, null, 2), redactionSecrets)}\n`;
       if (!result.response.ok) {
         stderr.write(formatted);
         return 1;
@@ -161,12 +184,12 @@ export async function runSessionCommand(options: SessionCommandOptions): Promise
 
     const prepared = await request({ mode: 'preserve' });
     if (!prepared.response.ok) {
-      stderr.write(`${redactSecrets(JSON.stringify(prepared.payload, null, 2), runtimeSecrets)}\n`);
+      stderr.write(`${redactSecrets(JSON.stringify(prepared.payload, null, 2), redactionSecrets)}\n`);
       return 1;
     }
     const patch = parsePatchPayload(prepared.payload);
     if (patch === null) {
-      stdout.write(`${redactSecrets(JSON.stringify(prepared.payload, null, 2), runtimeSecrets)}\n`);
+      stdout.write(`${redactSecrets(JSON.stringify(prepared.payload, null, 2), redactionSecrets)}\n`);
       return 0;
     }
 
@@ -182,7 +205,7 @@ export async function runSessionCommand(options: SessionCommandOptions): Promise
       preservationSha256: patch.sha256,
     });
     if (!destroyed.response.ok) {
-      stderr.write(`${redactSecrets(JSON.stringify(destroyed.payload, null, 2), runtimeSecrets)}\n`);
+      stderr.write(`${redactSecrets(JSON.stringify(destroyed.payload, null, 2), redactionSecrets)}\n`);
       stderr.write(`recoverable patch retained at ${artifactPath}\n`);
       return 1;
     }
@@ -194,7 +217,7 @@ export async function runSessionCommand(options: SessionCommandOptions): Promise
         sha256: patch.sha256,
         bytes: patch.content.byteLength,
       },
-    }, null, 2), runtimeSecrets)}\n`);
+    }, null, 2), redactionSecrets)}\n`);
     return 0;
   } catch (error: unknown) {
     return fail(error);
