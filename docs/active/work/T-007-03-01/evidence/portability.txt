@@ -1,0 +1,2 @@
+[present] docs/knowledge/handoff-runbook.md in scrubbed context
+[absent] docs/active in scrubbed context
