@@ -188,7 +188,7 @@ test('Astro config contains the exact branded HMR contract', () => {
 test('service commands use stable paths, ports, and no embedded credentials', () => {
   assert.equal(
     buildAstroCommand(),
-    `npm run dev -- ${SESSION_WORKTREE} --config ${SESSION_ASTRO_CONFIG_PATH}`,
+    `./node_modules/.bin/astro --root ${SESSION_WORKTREE} --config ${SESSION_ASTRO_CONFIG_PATH} dev`,
   );
   const codeServer = buildCodeServerCommand();
   assert.match(codeServer, new RegExp(`0\\.0\\.0\\.0:${CODE_SERVER_PORT}`));

@@ -263,7 +263,7 @@ export default {
 }
 
 export function buildAstroCommand(): string {
-  return `npm run dev -- ${SESSION_WORKTREE} --config ${SESSION_ASTRO_CONFIG_PATH}`;
+  return `./node_modules/.bin/astro --root ${SESSION_WORKTREE} --config ${SESSION_ASTRO_CONFIG_PATH} dev`;
 }
 
 export function buildCodeServerCommand(): string {
