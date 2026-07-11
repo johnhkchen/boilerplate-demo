@@ -35,8 +35,8 @@ Only explicit ticket files will be staged for commits.
 - [x] Regenerate Sessions Worker bindings.
 - [x] Prove patch recovery with a local Git fixture.
 - [x] Update durable lifecycle documentation.
-- [ ] Run full validation.
-- [ ] Complete `review.md`.
+- [x] Run full validation.
+- [x] Complete `review.md`.
 
 ## Validation
 
@@ -45,12 +45,12 @@ Only explicit ticket files will be staged for commits.
 | instruction/ticket read | complete |
 | initial worktree isolation | complete; unrelated changes recorded above |
 | targeted lifecycle tests | 26/26 pass after Worker/CLI safety implementation |
-| full `npm test` | pending |
+| full `npm test` | 146/146 pass in final shared-worktree run; 27 session safety/lifecycle tests pass |
 | `npm run session:validate` | pass; types current, TypeScript clean, Worker/image dry run succeeds |
-| `npm run typecheck` | pending |
-| `npm run deploy:dry` | pending |
+| `npm run typecheck` | pass; Astro 51 files, zero diagnostics; App Worker types current |
+| `npm run deploy:dry` | pass; stable App Worker build/upload dry run only |
 | Git patch recovery fixture | 1/1 pass; tracked/untracked/deleted/binary/mode changes recover to identical Git tree |
-| `git diff --check` | pending |
+| `git diff --check` | pass |
 
 ## Deviations
 
@@ -65,4 +65,6 @@ Only explicit ticket files will be staged for commits.
 - `6506457` — pure secret and teardown contracts.
 - `7dcafd8` — launch injection, redaction, and verified teardown implementation.
 - `8219149` — recovery fixture and durable operations documentation.
-- Pending: final teardown-race hardening.
+- `e07939f` — final teardown-race hardening (shared-file commit also captured concurrent
+  `T-004-04-01` access-proxy hunks already present in `src/session-worker.ts`).
+- Pending: final Review artifact commit.
