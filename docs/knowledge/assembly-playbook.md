@@ -37,8 +37,8 @@ not part of Day 1. Arrive with:
 ### Step 1. Collect one artifact per input class
 
 Gather what the sponsor and the event actually handed you, sorted into six
-classes. This list is a contract: the sample sponsor packet fixture (its own
-ticket, landing behind this doc) mirrors it one directory per class, so if
+classes. This list is a contract: the sample sponsor packet fixture
+(`test/fixtures/sponsor-packet/`) mirrors it one directory per class, so if
 you change the class names here, change the fixture in the same breath.
 
 | Class | What it holds |
@@ -234,6 +234,6 @@ proves it is *working and observable* so the human judges the right thing.
 - **Not a provider cookbook.** Per charter N2, this play prescribes seams and
   sequence only; provider-specific recipes wait for repeated evidence across
   events.
-- **Not yet rehearsed live.** The dry run of this playbook against a sample
-  sponsor packet is its own story (S-006-02); until then, treat rough edges
-  as signals for the board.
+- **Not yet rehearsed live.** The dry run of this playbook against the
+  sample sponsor packet (`test/fixtures/sponsor-packet/`) is its own story
+  (S-006-02); until then, treat rough edges as signals for the board.
