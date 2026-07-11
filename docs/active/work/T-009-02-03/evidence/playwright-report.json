@@ -1,0 +1,479 @@
+{
+  "config": {
+    "argv": [
+      "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+      "/Users/johnchen/swe/repos/boilerplate-demo/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/Users/johnchen/swe/repos/boilerplate-demo/playwright.config.ts",
+    "rootDir": "/Users/johnchen/swe/repos/boilerplate-demo/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 60000,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/johnchen/swe/repos/boilerplate-demo/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "healthy",
+        "name": "healthy",
+        "testDir": "/Users/johnchen/swe/repos/boilerplate-demo/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "/demo-flow\\.spec\\.ts/"
+        ],
+        "timeout": 35000
+      },
+      {
+        "outputDir": "/Users/johnchen/swe/repos/boilerplate-demo/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "stalled",
+        "name": "stalled",
+        "testDir": "/Users/johnchen/swe/repos/boilerplate-demo/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "/demo-flow\\.spec\\.ts/"
+        ],
+        "timeout": 35000
+      },
+      {
+        "outputDir": "/Users/johnchen/swe/repos/boilerplate-demo/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "backstage",
+        "name": "backstage",
+        "testDir": "/Users/johnchen/swe/repos/boilerplate-demo/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "/backstage-flow\\.spec\\.ts/"
+        ],
+        "timeout": 35000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        {
+          "printSteps": true
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/flow-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npx wrangler d1 migrations apply BACKSTAGE_DB --local --persist-to .wrangler/state --config tests/support/backstage.wrangler.jsonc && npm run dev -- --host 127.0.0.1 --port 4323",
+      "url": "http://127.0.0.1:4323",
+      "timeout": 30000,
+      "reuseExistingServer": false,
+      "stdout": "ignore",
+      "stderr": "pipe",
+      "env": {
+        "ZELLIJ": "0",
+        "TERM_PROGRAM": "WezTerm",
+        "NODE": "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "INIT_CWD": "/Users/johnchen/swe/repos/boilerplate-demo",
+        "NVM_CD_FLAGS": "-q",
+        "TERM": "xterm-256color",
+        "SHELL": "/bin/zsh",
+        "npm_config_allow_scripts": "",
+        "TMPDIR": "/var/folders/kn/7f93dn8n1wb51m_jydvylncw0000gn/T/",
+        "HOMEBREW_REPOSITORY": "/opt/homebrew",
+        "npm_config_global_prefix": "/opt/homebrew",
+        "TERM_PROGRAM_VERSION": "20251025-070338-b6e75fd7",
+        "LISA_BIN": "/opt/homebrew/bin/lisa",
+        "FPATH": "/opt/homebrew/share/zsh/site-functions:/usr/local/share/zsh/site-functions:/usr/share/zsh/site-functions:/usr/share/zsh/5.9/functions",
+        "COLOR": "0",
+        "NO_COLOR": "1",
+        "npm_config_noproxy": "",
+        "npm_config_local_prefix": "/Users/johnchen/swe/repos/boilerplate-demo",
+        "LC_ALL": "C.UTF-8",
+        "USER": "johnchen",
+        "NVM_DIR": "/Users/johnchen/.nvm",
+        "COMMAND_MODE": "unix2003",
+        "npm_config_globalconfig": "/opt/homebrew/etc/npmrc",
+        "SSH_AUTH_SOCK": "/Users/johnchen/.local/share/wezterm/agent.2935",
+        "__CF_USER_TEXT_ENCODING": "0x1F5:0x0:0x0",
+        "npm_execpath": "/opt/homebrew/lib/node_modules/npm/bin/npm-cli.js",
+        "PAGER": "cat",
+        "WEZTERM_EXECUTABLE_DIR": "/Applications/WezTerm.app/Contents/MacOS",
+        "PATH": "/Users/johnchen/swe/repos/boilerplate-demo/node_modules/.bin:/Users/johnchen/swe/repos/boilerplate-demo/node_modules/.bin:/Users/johnchen/swe/repos/node_modules/.bin:/Users/johnchen/swe/node_modules/.bin:/Users/johnchen/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/johnchen/.codex/packages/standalone/releases/0.144.1-aarch64-apple-darwin/codex-path:/Users/johnchen/.codex/packages/standalone/releases/0.144.1-aarch64-apple-darwin/codex-path:/Users/johnchen/.codex/tmp/arg0/codex-arg0leE7N0:/Users/johnchen/.local/bin:/Users/johnchen/.bun/bin:/Users/johnchen/.antigravity/antigravity/bin:/Users/johnchen/.antigravity/antigravity/bin:/Users/johnchen/.local/bin:/Users/johnchen/.local/bin:/Users/johnchen/.bun/bin:/Users/johnchen/.antigravity/antigravity/bin:/Users/johnchen/.antigravity/antigravity/bin:/Users/johnchen/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Users/johnchen/.cargo/bin",
+        "npm_package_json": "/Users/johnchen/swe/repos/boilerplate-demo/package.json",
+        "_": "/Users/johnchen/swe/repos/boilerplate-demo/node_modules/.bin/playwright",
+        "npm_config_userconfig": "/Users/johnchen/.npmrc",
+        "npm_config_init_module": "/Users/johnchen/.npm-init.js",
+        "__CFBundleIdentifier": "com.github.wez.wezterm",
+        "CODEX_THREAD_ID": "",
+        "npm_command": "exec",
+        "PWD": "/Users/johnchen/swe/repos/boilerplate-demo",
+        "npm_lifecycle_event": "npx",
+        "EDITOR": "vi",
+        "npm_package_name": "demo-runway",
+        "LISA_TICKET_ID": "T-009-02-03",
+        "LANG": "en_US.UTF-8",
+        "WEZTERM_PANE": "14",
+        "npm_config_npm_version": "11.17.0",
+        "XPC_FLAGS": "0x0",
+        "CODEX_CI": "1",
+        "npm_package_engines_node": ">=22.12.0",
+        "ZELLIJ_PANE_ID": "0",
+        "npm_config_node_gyp": "/opt/homebrew/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
+        "LISA_PANE_ID": "0",
+        "npm_package_version": "0.0.1",
+        "XPC_SERVICE_NAME": "0",
+        "WEZTERM_UNIX_SOCKET": "/Users/johnchen/.local/share/wezterm/gui-sock-2935",
+        "SHLVL": "4",
+        "HOME": "/Users/johnchen",
+        "HOMEBREW_PREFIX": "/opt/homebrew",
+        "WEZTERM_CONFIG_DIR": "/Users/johnchen",
+        "GH_PAGER": "cat",
+        "npm_config_cache": "/Users/johnchen/.npm",
+        "LOGNAME": "johnchen",
+        "npm_lifecycle_script": "'playwright'",
+        "LC_CTYPE": "C.UTF-8",
+        "BUN_INSTALL": "/Users/johnchen/.bun",
+        "npm_config_user_agent": "npm/11.17.0 node/v26.5.0 darwin arm64 workspaces/false",
+        "INFOPATH": "/opt/homebrew/share/info:/opt/homebrew/share/info:",
+        "HOMEBREW_CELLAR": "/opt/homebrew/Cellar",
+        "WEZTERM_EXECUTABLE": "/Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+        "OSLogRateLimit": "64",
+        "LISA_AGENT_CLIENT": "codex",
+        "GIT_PAGER": "cat",
+        "WEZTERM_CONFIG_FILE": "/Users/johnchen/.wezterm.lua",
+        "npm_node_execpath": "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "npm_config_prefix": "/opt/homebrew",
+        "ZELLIJ_SESSION_NAME": "outstanding-horse",
+        "COLORTERM": "truecolor",
+        "CLOUDFLARE_INCLUDE_PROCESS_ENV": "true",
+        "DEMO_WRANGLER_CONFIG_PATH": "/Users/johnchen/swe/repos/boilerplate-demo/tests/support/backstage.wrangler.jsonc",
+        "DEMO_SIGNING_KEY": "playwright-local-test-key",
+        "DEMO_PASSCODE": "playwright-backstage-knock"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "demo-flow.spec.ts",
+      "file": "demo-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "main demo flow renders the signed receipt",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "healthy",
+              "projectName": "healthy",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 413,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "load the public demo",
+                      "duration": 80
+                    },
+                    {
+                      "title": "await receipt boundary response",
+                      "duration": 123
+                    },
+                    {
+                      "title": "activate the labeled primary action",
+                      "duration": 49
+                    }
+                  ],
+                  "startTime": "2026-07-11T22:31:30.310Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "83ec109edb6e6af9bb9f-0463d009bc75fbcc621e",
+          "file": "demo-flow.spec.ts",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "the stalled boundary stays narrated and the labeled action still answers",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "the stalled-boundary flow runs only on the stalled project",
+                  "location": {
+                    "file": "/Users/johnchen/swe/repos/boilerplate-demo/tests/demo-flow.spec.ts",
+                    "line": 85,
+                    "column": 8
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "healthy",
+              "projectName": "healthy",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 28,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-11T22:31:30.910Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "the stalled-boundary flow runs only on the stalled project",
+                      "location": {
+                        "file": "/Users/johnchen/swe/repos/boilerplate-demo/tests/demo-flow.spec.ts",
+                        "line": 85,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "83ec109edb6e6af9bb9f-1a791a7952c09e7069eb",
+          "file": "demo-flow.spec.ts",
+          "line": 82,
+          "column": 1
+        },
+        {
+          "title": "main demo flow renders the signed receipt",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "the signed-receipt flow runs only on the healthy project",
+                  "location": {
+                    "file": "/Users/johnchen/swe/repos/boilerplate-demo/tests/demo-flow.spec.ts",
+                    "line": 20,
+                    "column": 8
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "stalled",
+              "projectName": "stalled",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 44,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-07-11T22:31:31.131Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "the signed-receipt flow runs only on the healthy project",
+                      "location": {
+                        "file": "/Users/johnchen/swe/repos/boilerplate-demo/tests/demo-flow.spec.ts",
+                        "line": 20,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "83ec109edb6e6af9bb9f-74baa60059e917ea1fde",
+          "file": "demo-flow.spec.ts",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "the stalled boundary stays narrated and the labeled action still answers",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "stalled",
+              "projectName": "stalled",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 157,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "load the public demo",
+                      "duration": 54
+                    },
+                    {
+                      "title": "observe the stalled boundary stays narrated",
+                      "duration": 20
+                    },
+                    {
+                      "title": "activate the labeled primary action",
+                      "duration": 51
+                    }
+                  ],
+                  "startTime": "2026-07-11T22:31:31.241Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "83ec109edb6e6af9bb9f-7066c1c58c70a511c063",
+          "file": "demo-flow.spec.ts",
+          "line": 82,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "backstage-flow.spec.ts",
+      "file": "backstage-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "one passcode unlocks the backstage checklist and every entry action",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 35000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "backstage",
+              "projectName": "backstage",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 668,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "open the locked backstage dashboard",
+                      "duration": 89
+                    },
+                    {
+                      "title": "refuse a wrong passcode",
+                      "duration": 89
+                    },
+                    {
+                      "title": "unlock once and list existing entries",
+                      "duration": 116
+                    },
+                    {
+                      "title": "submit without a second credential",
+                      "duration": 108
+                    },
+                    {
+                      "title": "complete an entry from the checklist",
+                      "duration": 101
+                    },
+                    {
+                      "title": "delete an entry from the checklist",
+                      "duration": 88
+                    }
+                  ],
+                  "startTime": "2026-07-11T22:31:31.599Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5e6740a49bcb93e171e9-1875b2d08c49042b064a",
+          "file": "backstage-flow.spec.ts",
+          "line": 33,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-07-11T22:31:27.166Z",
+    "duration": 5201.691,
+    "expected": 3,
+    "skipped": 2,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

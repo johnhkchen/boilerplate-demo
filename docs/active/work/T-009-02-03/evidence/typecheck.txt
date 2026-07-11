@@ -1,0 +1,22 @@
+
+> demo-runway@0.0.1 typecheck
+> astro check && tsc --noEmit && npm run worker:types:check
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+15:31:01 [vite] Re-optimizing dependencies because vite config has changed
+15:31:01 [vite] Re-optimizing dependencies because vite config has changed
+15:31:01 [types] Generated 273ms
+15:31:01 [check] Getting diagnostics for Astro files in /Users/johnchen/swe/repos/boilerplate-demo...
+Result (61 files):
+- 0 errors
+- 0 warnings
+- 0 hints
+
+
+> demo-runway@0.0.1 worker:types:check
+> wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false --check
+
+
+ ⛅️ wrangler 4.110.0
+────────────────────
+✨ Types at worker-configuration.d.ts are up to date.

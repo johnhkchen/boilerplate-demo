@@ -1,0 +1,32 @@
+
+> demo-runway@0.0.1 build
+> astro build
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+15:31:39 [vite] Re-optimizing dependencies because vite config has changed
+15:31:39 [vite] Re-optimizing dependencies because vite config has changed
+15:31:40 [types] Generated 204ms
+15:31:40 [build] output: "static"
+15:31:40 [build] mode: "server"
+15:31:40 [build] directory: /Users/johnchen/swe/repos/boilerplate-demo/dist/
+15:31:40 [build] adapter: @astrojs/cloudflare
+15:31:40 [build] Collecting build info...
+15:31:40 [build] ✓ Completed in 229ms.
+15:31:40 [build] Building server entrypoints...
+Using secrets defined in process.env
+15:31:40 [vite] ✓ built in 76ms
+Using secrets defined in process.env
+15:31:40 [vite] ✓ built in 59ms
+15:31:40 [vite] ✓ built in 35ms
+Using secrets defined in dist/server/.prerender/.dev.vars
+
+ prerendering static routes
+15:31:40   ├─ /backstage/index.html (+7ms)
+15:31:40   ├─ /index.html (+5ms)
+15:31:40 ✓ Completed in 150ms.
+
+15:31:40 [build] Rearranging server assets...
+15:31:40 [build] ✓ Completed in 341ms.
+15:31:40 [@astrojs/cloudflare] Injected immutable Cache-Control for /_astro/* into _headers.
+15:31:40 [build] Server built in 572ms
+15:31:40 [build] Complete!

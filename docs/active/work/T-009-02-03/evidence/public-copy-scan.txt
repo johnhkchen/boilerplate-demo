@@ -1,0 +1,48 @@
+T-009-02-03 public-copy source audit
+Run: 2026-07-11
+Scope: src/pages/index.astro and src/pages/backstage.astro
+
+Known drift phrase scan
+Command categories:
+- starting line every demo inherits
+- shared knock / not a vault
+- unlock once to see / no second sign-in
+- generated project / template history / repository history
+Result: PASS — no matches.
+
+Potential literal credential assignment scan
+Command categories:
+- DEMO_SIGNING_KEY assignment
+- DEMO_PASSCODE assignment
+- playwright-backstage-knock
+- ticket-owned signing marker
+Result: PASS — no matches in either page.
+
+Orientation source confirmation
+src/pages/index.astro contains:
+- Demo Runway
+- Try the demo
+- Watch the server sign a note
+- Ask for a fresh note
+- Leave a note for the team
+
+src/pages/backstage.astro contains:
+- Backstage
+- Share with your team
+- Don't paste passwords, keys, or other secrets here; send them securely instead.
+- Open the backstage list
+- Open backstage
+- Shared checklist
+- Add something
+- Add to the list
+
+Rendered-string review
+- Browser titles are short names or name-led phrases, not descriptive sentences.
+- No visible string narrates repository, template, framework, runtime, or development history.
+- Internal engineering comments do use technical vocabulary; they are not rendered or announced.
+- The Backstage safety note names prohibited secret content but contains no credential value.
+- Page scripts hold the visitor-entered passcode only at runtime and contain no authored passcode.
+- Receipt values and submitted entry text are runtime data, not authored public-copy literals.
+
+Result: PASS — no known lecture phrase, insider self-reference, sentence-title wording,
+literal signing key, or literal passcode appears in user-facing page copy.

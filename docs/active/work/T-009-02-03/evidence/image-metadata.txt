@@ -1,0 +1,21 @@
+T-009-02-03 screenshot metadata
+Decoder: file(1), PNG signature and IHDR dimensions
+
+Exact viewport evidence
+PASS backstage-locked-phone-375x812.png — 375 x 812, RGB, non-interlaced
+PASS backstage-locked-projector-1920x1080.png — 1920 x 1080, RGB, non-interlaced
+PASS backstage-open-phone-375x812.png — 375 x 812, RGB, non-interlaced
+PASS backstage-open-projector-1920x1080.png — 1920 x 1080, RGB, non-interlaced
+PASS index-phone-375x812.png — 375 x 812, RGB, non-interlaced
+PASS index-projector-1920x1080.png — 1920 x 1080, RGB, non-interlaced
+
+Full-page context evidence
+PASS backstage-locked-phone-375x812-full.png — 375 x 888, RGB, non-interlaced
+PASS backstage-locked-projector-1920x1080-full.png — 1920 x 1171, RGB, non-interlaced
+PASS backstage-open-phone-375x812-full.png — 375 x 1765, RGB, non-interlaced
+PASS backstage-open-projector-1920x1080-full.png — 1920 x 2391, RGB, non-interlaced
+PASS index-phone-375x812-full.png — 375 x 1369, RGB, non-interlaced
+PASS index-projector-1920x1080-full.png — 1920 x 1853, RGB, non-interlaced
+
+Result: PASS — all 12 PNGs decode; the six cold-read images exactly match their named viewport;
+the six `-full` images preserve below-the-fold context at the same widths.

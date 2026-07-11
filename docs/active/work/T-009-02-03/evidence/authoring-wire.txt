@@ -1,0 +1,45 @@
+T-009-02-03 authoring-wire verification
+Run: 2026-07-11
+
+Documented path
+1. AGENTS.md tells Codex to read CLAUDE.md first.
+2. AGENTS.md links docs/knowledge/rdspi-workflow.md.
+3. AGENTS.md links docs/knowledge/copy-voice-standard.md.
+4. CLAUDE.md links docs/knowledge/rdspi-workflow.md.
+5. CLAUDE.md links docs/knowledge/copy-voice-standard.md.
+6. docs/knowledge/rdspi-workflow.md links copy-voice-standard.md relative to its own directory.
+
+Target resolution
+PASS CLAUDE.md
+PASS docs/knowledge/rdspi-workflow.md
+PASS docs/knowledge/copy-voice-standard.md
+
+Injected-path content
+PASS — AGENTS.md states the RDSPI workflow is injected into agent context by Lisa.
+PASS — CLAUDE.md states the same injection path.
+PASS — the workflow summarizes all four binding authoring rules:
+- plain kitchen-table English;
+- brief elements within the length envelope;
+- names as wayfinding;
+- action labels beginning with a specific verb.
+PASS — the workflow requires an affected copy map and standard citation before Design.
+
+Sweep-session execution evidence
+PASS docs/active/work/T-009-02-01/research.md cites
+     docs/knowledge/copy-voice-standard.md for the Backstage sweep.
+PASS docs/active/work/T-009-02-02/research.md cites
+     docs/knowledge/copy-voice-standard.md for the index sweep.
+PASS docs/active/work/T-009-02-03/research.md cites the same standard for final review.
+
+Current-session observation
+The session received the workflow instruction, followed AGENTS.md to CLAUDE.md, and read the
+workflow, ticket, and copy standard before making copy-review judgments. This confirms the
+documented authoring path was live for this execution.
+
+Boundary
+This evidence verifies the repository pointers, resolved files, required workflow content, and
+the context actually supplied to this session. It does not inspect or make a broader claim about
+Lisa's internal implementation beyond the documented injection statement.
+
+Result: PASS — the S-009-01 standard wire is present, resolves, and was exercised by both rewrite
+Research phases and this verification phase.

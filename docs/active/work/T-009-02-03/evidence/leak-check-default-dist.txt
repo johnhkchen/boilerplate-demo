@@ -1,0 +1,6 @@
+
+> demo-runway@0.0.1 leak:check
+> node --experimental-strip-types scripts/leak-check.ts
+
+✗ leak check — secret reached 1 browser surface
+    client asset: server/.dev.vars
