@@ -6,10 +6,9 @@
 - Design: complete.
 - Structure: complete.
 - Plan: complete.
-- Implement: core, edge, tests, and test registration complete.
-- Verification: ticket-owned mutation behavior and build/type gates pass.
-- Cross-ticket feed verification: awaiting the parallel `T-008-02-01` feed-contract commit.
-- Review: pending final green verification.
+- Implement: complete.
+- Verification: complete and green against the evolved feed contract.
+- Review: in progress.
 
 ## Pre-implementation checkpoint
 
@@ -238,6 +237,23 @@ Result: exit 0.
 - Cloudflare adapter completed.
 - The new dynamic route bundles successfully.
 
+### Cloudflare deploy dry run
+
+Command:
+
+```sh
+npm run deploy:dry
+```
+
+Result: exit 0.
+
+- Astro rebuilt successfully.
+- Wrangler used the generated redirected configuration.
+- The module table contains the generated dynamic `_id_` route chunk.
+- The bundle retains the existing `BACKSTAGE_DB` D1 binding.
+- Total upload preparation completed.
+- `--dry-run` exited without publishing or mutating remote state.
+
 ### Diff and formatting hygiene
 
 - Initial `git diff --check`: passed.
@@ -278,15 +294,112 @@ continuous execution steps. They remain structured and ticket-specific.
 
 ## Remaining implementation-phase work
 
-1. Checkpoint the ticket-owned core, edge, test, package registration, and this progress record.
-2. Allow the parallel feed ticket's coherent commit to land without editing its files.
-3. Rerun the focused management suite; require 11/11.
-4. Rerun combined backstage regression coverage.
-5. Rerun `npm test`; require all tests green.
-6. Rerun typecheck/build if the parallel commit changes compilation inputs.
-7. Run deployment dry validation if proportional and locally available.
-8. Update this file with final evidence and implementation commit ids.
-9. Perform the Review phase and create `review.md`.
+All implementation-phase work is complete. Review remains.
+
+## Implementation checkpoint
+
+Commit:
+
+```text
+e4fc928 feat(T-008-02-02): add gated entry management routes
+```
+
+Committed files:
+
+- `src/lib/backstage-management.ts`
+- `src/pages/api/backstage/entries/[id].ts`
+- `test/backstage-management.test.mjs`
+- `package.json`
+- `docs/active/work/T-008-02-02/progress.md`
+
+The commit excluded Lisa-owned state and every parallel feed file. `git show --check` passed.
+
+## Final verification after feed evolution
+
+Parallel `T-008-02-01` removed the temporary four-field projection in the shared worktree. This
+ticket did not edit those files. With the canonical six-field feed available, all previously
+pending acceptance assertions passed.
+
+### Focused management suite — final
+
+```text
+tests 11
+pass 11
+fail 0
+cancelled 0
+skipped 0
+todo 0
+```
+
+The same two tests that had exposed the temporary feed mismatch now prove:
+
+- a PATCH completion timestamp is returned byte-for-byte through the feed;
+- a DELETE removes the addressed id from the feed;
+- feed entries equal the canonical persisted list after each mutation.
+
+### Combined backstage regression — final
+
+Command:
+
+```sh
+node --experimental-strip-types --test \
+  test/passcode.test.mjs \
+  test/backstage-store.test.mjs \
+  test/backstage-route.test.mjs \
+  test/backstage-management.test.mjs \
+  test/backstage-retrieval.test.mjs
+```
+
+Result:
+
+```text
+tests 60
+pass 60
+fail 0
+```
+
+This covers the shared gate, persistence primitives, unchanged POST core, new management core,
+and evolved feed core together against the current shared branch state.
+
+### Full unit suite — final
+
+Command:
+
+```sh
+npm test
+```
+
+Result:
+
+```text
+tests 172
+pass 172
+fail 0
+cancelled 0
+skipped 0
+todo 0
+```
+
+### Type gate after feed evolution
+
+Command:
+
+```sh
+npm run typecheck
+```
+
+Result: exit 0.
+
+- Astro: 60 files, 0 errors, 0 warnings, 0 hints.
+- TypeScript compilation passed.
+- Wrangler reports generated Worker types up to date.
+- Only the pre-existing informational session-driver deprecation notice remains.
+
+## Implement phase verdict
+
+Complete. The management core and edge satisfy the ticket boundary, every ticket-owned acceptance
+test passes, full regressions are green, deployment bundling is proven by dry run, and no submit or
+parallel feed file was changed by this ticket.
 
 ## Repository hygiene
 
