@@ -1,3 +1,8 @@
 {
-  "extends": "astro/tsconfigs/base"
+  "extends": "astro/tsconfigs/base",
+  "exclude": [
+    "${configDir}/dist",
+    "src/session-worker.ts",
+    "worker-configuration.sessions.d.ts"
+  ]
 }

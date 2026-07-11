@@ -52,7 +52,7 @@ RUN npm ci && npm cache clean --force
 
 # Explicit copies are a second boundary after .dockerignore: secrets, Git data,
 # local Wrangler state, and ticket artifacts cannot enter the final image.
-COPY astro.config.mjs tsconfig.json wrangler.jsonc wrangler.sessions.jsonc ./
+COPY astro.config.mjs tsconfig.json tsconfig.sessions.json wrangler.jsonc wrangler.sessions.jsonc ./
 COPY worker-configuration.d.ts worker-configuration.sessions.d.ts ./
 COPY src/ ./src/
 COPY migrations/ ./migrations/

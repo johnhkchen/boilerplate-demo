@@ -19,7 +19,7 @@
     "worker:types:check": "wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false --check",
     "session:types": "wrangler types worker-configuration.sessions.d.ts --config wrangler.sessions.jsonc --env-interface SessionWorkerEnv --include-runtime=false --strict-vars=false",
     "session:types:check": "wrangler types worker-configuration.sessions.d.ts --config wrangler.sessions.jsonc --env-interface SessionWorkerEnv --include-runtime=false --strict-vars=false --check",
-    "session:validate": "npm run session:types:check && tsc --noEmit && wrangler deploy --dry-run --config wrangler.sessions.jsonc",
+    "session:validate": "npm run session:types:check && tsc --noEmit --project tsconfig.sessions.json && wrangler deploy --dry-run --config wrangler.sessions.jsonc",
     "session:image:build": "docker build --platform linux/amd64 --file Dockerfile.session --tag demo-runway-session:local .",
     "session:image:check": "node --experimental-strip-types scripts/session-image-check.ts",
     "typecheck": "astro check && tsc --noEmit && npm run worker:types:check",

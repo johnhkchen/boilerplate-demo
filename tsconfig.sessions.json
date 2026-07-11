@@ -1,0 +1,4 @@
+{
+  "extends": "astro/tsconfigs/base",
+  "files": ["worker-configuration.sessions.d.ts", "src/session-worker.ts"]
+}
