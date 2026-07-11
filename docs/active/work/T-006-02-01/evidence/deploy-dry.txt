@@ -1,0 +1,95 @@
+
+> demo-runway@0.0.1 deploy:dry
+> astro build && wrangler deploy --dry-run
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:27:16 [vite] Re-optimizing dependencies because vite config has changed
+23:27:16 [vite] Re-optimizing dependencies because vite config has changed
+23:27:16 [types] Generated 308ms
+23:27:16 [build] output: "static"
+23:27:16 [build] mode: "server"
+23:27:16 [build] directory: /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy/dist/
+23:27:16 [build] adapter: @astrojs/cloudflare
+23:27:16 [build] Collecting build info...
+23:27:16 [build] ✓ Completed in 337ms.
+23:27:16 [build] Building server entrypoints...
+Using secrets defined in .dev.vars
+23:27:17 [vite] ✓ built in 105ms
+Using secrets defined in .dev.vars
+23:27:17 [vite] ✓ built in 72ms
+23:27:17 [vite] ✓ built in 21ms
+Default inspector port 9229 not available, using 9230 instead
+
+Using secrets defined in dist/server/.prerender/.dev.vars
+
+ prerendering static routes 
+23:27:17   ├─ /backstage/index.html (+9ms) 
+23:27:17   ├─ /index.html (+6ms) 
+23:27:17 ✓ Completed in 171ms.
+
+23:27:17 [build] Rearranging server assets...
+23:27:17 [build] ✓ Completed in 395ms.
+23:27:17 [@astrojs/cloudflare] Injected immutable Cache-Control for /_astro/* into _headers.
+23:27:17 [build] Server built in 737ms
+23:27:17 [build] Complete!
+
+ ⛅️ wrangler 4.110.0
+────────────────────
+Using redirected Wrangler configuration.
+ - Configuration being used: "dist/server/wrangler.json"
+ - Original user's configuration: "wrangler.jsonc"
+ - Deploy configuration file: ".wrangler/deploy/config.json"
+Attaching additional modules:
+┌───────────────────────────────────────────────────────────┬──────┬────────────┐
+│ Name                                                      │ Type │ Size       │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/_virtual_astro_server-island-manifest_q0HM18kM.mjs │ esm  │ 0.27 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/_virtual_astro_session-driver_mwNecSIa.mjs         │ esm  │ 0.97 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/assets_CzCtBtYx.mjs                                │ esm  │ 14.45 KiB  │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/entries_BFZzOG2O.mjs                               │ esm  │ 4.01 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/fault_CJK_Dj_3.mjs                                 │ esm  │ 0.75 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/feed_BiAtnlJT.mjs                                  │ esm  │ 1.25 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/image-passthrough-endpoint_DV4-mYj7.mjs            │ esm  │ 24.49 KiB  │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/noop-entrypoint_BYLrzUxc.mjs                       │ esm  │ 0.15 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/noop_CJJywvE7.mjs                                  │ esm  │ 0.66 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/parcel_CrRuoeFT.mjs                                │ esm  │ 6.16 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/passcode_6TiNFm-5.mjs                              │ esm  │ 2.52 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/receipt_C8i6sI37.mjs                               │ esm  │ 2.64 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/remote_Zs3EK5-y.mjs                                │ esm  │ 26.99 KiB  │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/rolldown-runtime_Upwk45wU.mjs                      │ esm  │ 0.54 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/server_BNNjRfh4.mjs                                │ esm  │ 159.92 KiB │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/service_DkoVOpZd.mjs                               │ esm  │ 38.67 KiB  │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/shorthash_BMJi2pTU.mjs                             │ esm  │ 2.01 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/static-image-collection_BpfHRa6D.mjs               │ esm  │ 2.03 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ virtual_astro_middleware.mjs                              │ esm  │ 0.15 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ Total (19 modules)                                        │      │ 288.63 KiB │
+└───────────────────────────────────────────────────────────┴──────┴────────────┘
+✨ Read 5 files from the assets directory /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy/dist/client
+Total Upload: 547.20 KiB / gzip: 143.14 KiB
+Your Worker has access to the following bindings:
+Binding                                                             Resource                     
+env.BACKSTAGE_DB (c95861d4-2cfe-47c0-8a9b-c5e081779e48)             D1 Database                  
+env.ASSETS                                                          Assets                       
+env.CF_VERSION_METADATA                                             Worker Version Metadata      
+env.DEMO_FAULT ("off")                                              Environment Variable         
+
+--dry-run: exiting now.

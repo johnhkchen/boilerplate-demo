@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "outcome": "passed",
+  "faultMode": "off",
+  "durationMs": 4193.986958,
+  "timeBudgetMs": 45000,
+  "timedOut": false,
+  "checks": [
+    {
+      "check": "operation",
+      "boundary": "receipt",
+      "outcome": "passed",
+      "durationMs": 146.54945799999996,
+      "exitCode": 0,
+      "output": "\n> demo-runway@0.0.1 ops:check\n> node --experimental-strip-types scripts/ops-check.ts\n\n✓ receipt — passed in 34.5 ms\n    issued at   2026-07-11T06:13:32.750Z\n    one-time    a11be387ea9e61ed84d9417f3aba85d7\n    signature   verified against the out-of-band key\n"
+    },
+    {
+      "check": "flow",
+      "boundary": "receipt",
+      "outcome": "passed",
+      "durationMs": 1158.746584,
+      "exitCode": 0,
+      "output": "\n> demo-runway@0.0.1 test:flow\n> playwright test --project=healthy\n\n\nRunning 2 tests using 1 worker\n\n     1.1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › load the public demo (95ms)\n     1.2 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › await receipt boundary response (102ms)\n     1.3 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › activate the labeled primary action (69ms)\n  ✓  1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt (436ms)\n  -  2 [healthy] › tests/demo-flow.spec.ts:82:1 › the stalled boundary stays narrated and the labeled action still answers\n\n  1 skipped\n  1 passed (847ms)\n"
+    },
+    {
+      "check": "leak",
+      "boundary": "receipt",
+      "outcome": "passed",
+      "durationMs": 135.1608329999999,
+      "exitCode": 0,
+      "output": "\n> demo-runway@0.0.1 leak:check\n> node --experimental-strip-types scripts/leak-check.ts\n\n✓ leak check — passed\n    client assets    24 checked\n    response bodies  1 checked\n"
+    }
+  ]
+}

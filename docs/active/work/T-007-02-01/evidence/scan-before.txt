@@ -1,0 +1,8 @@
+==> Scan BEFORE scrub — active author couplings on the runtime path
+  [coupled] D1 database_id (account-bound)  ->  c95861d4-2cfe-47c0-8a9b-c5e081779e48
+  [coupled] App route (author zone)  ->  "pattern": "demo.b28.dev"
+  [coupled] Session preview route (author zone)  ->  "pattern": "demo-session.b28.dev"
+  [coupled] Session editor route (author zone)  ->  "pattern": "code-session.b28.dev"
+  [coupled] SESSION_DOMAIN var (author zone)  ->  "SESSION_DOMAIN": "b28.dev"
+  [coupled] SESSION_REPOSITORY_URL var (author repo)  ->  johnhkchen/boilerplate-demo.git
+

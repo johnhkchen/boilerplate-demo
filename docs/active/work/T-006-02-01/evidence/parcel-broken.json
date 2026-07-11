@@ -1,0 +1,11 @@
+{
+  "boundary": "parcel-status",
+  "parcelId": "FW-2417-DEMO",
+  "status": "in_transit",
+  "lastScan": {
+    "location": "Rotterdam sort hub",
+    "scannedAt": "2026-03-14T09:12:40Z",
+    "event": "line_haul_departed"
+  },
+  "checksum": "e5545be0bac824fca3a42fbb65ca84e0f68be76d969324dd4f0c28a8e8b5e477"
+}

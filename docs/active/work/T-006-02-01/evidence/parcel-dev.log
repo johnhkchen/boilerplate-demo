@@ -1,0 +1,13 @@
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4392
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:24:17 [WARN] [vite] Default inspector port 9229 not available, using 9230 instead
+
+Using secrets defined in .dev.vars
+23:24:17 [vite] connected.
+23:24:18 [types] Generated 0ms
+ astro  v7.0.7 ready in 1124 ms
+┃ Local    http://127.0.0.1:4392/
+23:24:18 watching for file changes...

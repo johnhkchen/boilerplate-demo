@@ -1,0 +1,92 @@
+
+> demo-runway@0.0.1 integration:check
+> node --experimental-strip-types scripts/integration-check.ts
+
+
+── build ──
+
+> demo-runway@0.0.1 build
+> astro build
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:20:28 [vite] Re-optimizing dependencies because vite config has changed
+23:20:28 [vite] Re-optimizing dependencies because vite config has changed
+23:20:29 [types] Generated 193ms
+23:20:29 [build] output: "static"
+23:20:29 [build] mode: "server"
+23:20:29 [build] directory: /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy/dist/
+23:20:29 [build] adapter: @astrojs/cloudflare
+23:20:29 [build] Collecting build info...
+23:20:29 [build] ✓ Completed in 213ms.
+23:20:29 [build] Building server entrypoints...
+Using secrets defined in .dev.vars
+23:20:29 [vite] ✓ built in 51ms
+Using secrets defined in .dev.vars
+23:20:29 [vite] ✓ built in 46ms
+23:20:29 [vite] ✓ built in 15ms
+Using secrets defined in dist/server/.prerender/.dev.vars
+
+ prerendering static routes 
+23:20:29   ├─ /backstage/index.html (+7ms) 
+23:20:29   ├─ /index.html (+4ms) 
+23:20:29 ✓ Completed in 119ms.
+
+23:20:29 [build] Rearranging server assets...
+23:20:29 [build] ✓ Completed in 248ms.
+23:20:29 [@astrojs/cloudflare] Injected immutable Cache-Control for /_astro/* into _headers.
+23:20:29 [build] Server built in 464ms
+23:20:29 [build] Complete!
+
+── server ──
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4383
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:20:29 [vite] Re-optimizing dependencies because vite config has changed
+23:20:30 [vite] connected.
+23:20:30 [types] Generated 0ms
+23:20:30 [vite] Re-optimizing dependencies because vite config has changed
+ astro  v7.0.7 ready in 966 ms
+┃ Local    http://127.0.0.1:4383/
+23:20:30 watching for file changes...
+
+── operation ──
+
+> demo-runway@0.0.1 ops:check
+> node --experimental-strip-types scripts/ops-check.ts
+
+✗ receipt — failed in 29.6 ms  [operation]
+    signature did not verify against the out-of-band key
+
+── flow ──
+
+> demo-runway@0.0.1 test:flow
+> playwright test --project=healthy
+
+
+Running 2 tests using 1 worker
+
+     1.1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › load the public demo (45ms)
+     1.2 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › await receipt boundary response (114ms)
+     1.3 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › activate the labeled primary action (45ms)
+  ✓  1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt (249ms)
+  -  2 [healthy] › tests/demo-flow.spec.ts:82:1 › the stalled boundary stays narrated and the labeled action still answers
+
+  1 skipped
+  1 passed (514ms)
+
+── leak ──
+
+> demo-runway@0.0.1 leak:check
+> node --experimental-strip-types scripts/leak-check.ts
+
+✓ leak check — passed
+    client assets    24 checked
+    response bodies  1 checked
+
+Integration check: FAILED in 3.4s (budget 45.0s)
+✗ receipt [operation] — operation failed (139.8 ms)
+✓ receipt — flow passed (779.7 ms)
+✓ receipt — leak passed (131.8 ms)
+Report: test-results/integration-report.json

@@ -1,0 +1,55 @@
+
+==> Building clean tree at /var/folders/kn/7f93dn8n1wb51m_jydvylncw0000gn/T//fresh-owner-context (git archive HEAD — drops .git/.dev.vars/.promote/.wrangler)
+
+==> Removing template planning trail (docs/active/**); keeping docs/knowledge as reference
+
+==> Scan BEFORE scrub — active author couplings on the runtime path
+  [coupled] D1 database_id (account-bound)  ->  c95861d4-2cfe-47c0-8a9b-c5e081779e48
+  [coupled] App route (author zone)  ->  "pattern": "demo.b28.dev"
+  [coupled] Session preview route (author zone)  ->  "pattern": "demo-session.b28.dev"
+  [coupled] Session editor route (author zone)  ->  "pattern": "code-session.b28.dev"
+  [coupled] SESSION_DOMAIN var (author zone)  ->  "SESSION_DOMAIN": "b28.dev"
+  [coupled] SESSION_REPOSITORY_URL var (author repo)  ->  johnhkchen/boilerplate-demo.git
+
+==> Scrubbing active config couplings -> NEW-OWNER placeholders
+
+==> Scan AFTER scrub — active author couplings on the runtime path
+  (none — all five active couplings scrubbed)
+
+==> Asserting author-secret / local-state files are absent from the context
+  [absent] .git
+  [absent] .dev.vars
+  [absent] .promote
+  [absent] .wrangler
+
+==> Allowed residue on runtime path (shared b28 brand + narrative comments — NOT couplings)
+  src/styles/tokens.css:9:     1. Raw palette  (--b28-*)  the b28.dev brand identity constants.
+  src/styles/tokens.css:19:  --b28-steel: #44679b; /* signature steel blue */
+  src/styles/tokens.css:20:  --b28-off-white: #faf8f5; /* warm page/base */
+  src/styles/tokens.css:21:  --b28-cream: #f2efe9; /* warm secondary */
+  src/styles/tokens.css:22:  --b28-ink: #1c1917; /* near-black text */
+  src/styles/tokens.css:23:  --b28-ink-soft: #57534e; /* muted text */
+  src/styles/tokens.css:24:  --b28-on-steel: #faf8f5; /* text ON the steel accent */
+  src/styles/tokens.css:26:  --b28-shadow-lo: rgba(28, 25, 23, 0.09); /* cast shadow, bottom-right */
+  src/styles/tokens.css:27:  --b28-shadow-hi: rgba(255, 255, 255, 0.85); /* highlight, top-left light */
+  src/styles/tokens.css:30:  --color-bg: var(--b28-off-white);
+  src/styles/tokens.css:31:  --color-surface: var(--b28-off-white);
+  src/styles/tokens.css:32:  --color-text: var(--b28-ink);
+  src/styles/tokens.css:33:  --color-text-soft: var(--b28-ink-soft);
+  src/styles/tokens.css:34:  --color-accent: var(--b28-steel);
+  src/styles/tokens.css:35:  --color-accent-text: var(--b28-on-steel);
+  src/styles/tokens.css:36:  --color-border: var(--b28-cream);
+  src/styles/tokens.css:37:  --color-focus: var(--b28-steel);
+  src/styles/tokens.css:88:    -10px -10px 22px var(--b28-shadow-hi), 14px 16px 34px var(--b28-shadow-lo);
+  src/styles/tokens.css:90:    inset 6px 6px 14px var(--b28-shadow-lo),
+  src/styles/tokens.css:91:    inset -6px -6px 14px var(--b28-shadow-hi);
+  src/styles/base.css:47:  background: linear-gradient(160deg, var(--color-bg), var(--b28-cream));
+  src/pages/api/receipt.ts:24:// pointer-move to prove demo.b28.dev serves the version they deployed. These
+  wrangler.jsonc:24:  // The branded public hostname. A Workers custom domain binds demo.b28.dev to
+
+==> VERDICT
+  PASS — fresh-owner context at /var/folders/kn/7f93dn8n1wb51m_jydvylncw0000gn/T//fresh-owner-context
+  - zero active author couplings on the runtime path
+  - .git / .dev.vars / .promote / .wrangler absent (no author secret/state)
+  - docs/active/** removed (no template planning trail)
+  - deferred: live deploy under a real second Cloudflare account (see fresh-owner-harness.md)

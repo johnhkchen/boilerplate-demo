@@ -1,0 +1,37 @@
+# top-level of fresh-owner context
+.codex
+.dev.vars.example
+.dockerignore
+.github
+.gitignore
+.lisa
+.lisa.toml
+.nvmrc
+.vend
+AGENTS.md
+astro.config.mjs
+CLAUDE.md
+Dockerfile.session
+docs
+justfile
+LICENSE
+migrations
+package-lock.json
+package.json
+playwright.config.ts
+public
+README.md
+scripts
+SEED.md
+src
+test
+tests
+tsconfig.json
+tsconfig.sessions.json
+worker-configuration.d.ts
+worker-configuration.sessions.d.ts
+wrangler.jsonc
+wrangler.sessions.jsonc
+
+# forbidden files (expect: no matches):
+(end)

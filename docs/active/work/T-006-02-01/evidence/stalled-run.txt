@@ -1,0 +1,51 @@
+
+> demo-runway@0.0.1 integration:check
+> node --experimental-strip-types scripts/integration-check.ts
+
+
+── build ──
+
+> demo-runway@0.0.1 build
+> astro build
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:19:02 [types] Generated 19ms
+23:19:02 [build] output: "static"
+23:19:02 [build] mode: "server"
+23:19:02 [build] directory: /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy/dist/
+23:19:02 [build] adapter: @astrojs/cloudflare
+23:19:02 [build] Collecting build info...
+23:19:02 [build] ✓ Completed in 39ms.
+23:19:02 [build] Building server entrypoints...
+Using secrets defined in .dev.vars
+23:19:02 [vite] ✓ built in 58ms
+Using secrets defined in .dev.vars
+23:19:02 [vite] ✓ built in 49ms
+23:19:02 [vite] ✓ built in 14ms
+Default inspector port 9229 not available, using 9230 instead
+
+Using secrets defined in dist/server/.prerender/.dev.vars
+
+ prerendering static routes 
+23:19:02   ├─ /backstage/index.html (+7ms) 
+23:19:02   ├─ /index.html (+4ms) 
+23:19:02 ✓ Completed in 128ms.
+
+23:19:02 [build] Rearranging server assets...
+23:19:02 [build] ✓ Completed in 267ms.
+23:19:02 [@astrojs/cloudflare] Injected immutable Cache-Control for /_astro/* into _headers.
+23:19:02 [build] Server built in 309ms
+23:19:02 [build] Complete!
+
+── server ──
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4361
+
+{"message":"Dev server already running at http://127.0.0.1:4355 (pid 59670)\n  Stop:   astro dev stop\n  Status: astro dev status\n  Logs:   astro dev logs","label":"SKIP_FORMAT","level":"info"}
+integration check failed: dev server exited before readiness
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4361
+
+{"message":"Dev server already running at http://127.0.0.1:4355 (pid 59670)\n  Stop:   astro dev stop\n  Status: astro dev status\n  Logs:   astro dev logs","label":"SKIP_FORMAT","level":"info"}

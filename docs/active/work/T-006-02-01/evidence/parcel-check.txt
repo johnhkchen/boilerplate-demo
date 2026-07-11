@@ -1,0 +1,8 @@
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:23:07 [types] Generated 26ms
+23:23:07 [check] Getting diagnostics for Astro files in /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy...
+Result (56 files): 
+- 0 errors
+- 0 warnings
+- 0 hints
+

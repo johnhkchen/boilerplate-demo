@@ -1,0 +1,128 @@
+
+> demo-runway@0.0.1 integration:check
+> node --experimental-strip-types scripts/integration-check.ts
+
+
+── build ──
+
+> demo-runway@0.0.1 build
+> astro build
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:20:19 [vite] Re-optimizing dependencies because vite config has changed
+23:20:19 [vite] Re-optimizing dependencies because vite config has changed
+23:20:19 [types] Generated 188ms
+23:20:19 [build] output: "static"
+23:20:19 [build] mode: "server"
+23:20:19 [build] directory: /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy/dist/
+23:20:19 [build] adapter: @astrojs/cloudflare
+23:20:19 [build] Collecting build info...
+23:20:19 [build] ✓ Completed in 211ms.
+23:20:19 [build] Building server entrypoints...
+Using secrets defined in .dev.vars
+23:20:19 [vite] ✓ built in 51ms
+Using secrets defined in .dev.vars
+23:20:19 [vite] ✓ built in 52ms
+23:20:19 [vite] ✓ built in 7ms
+Using secrets defined in dist/server/.prerender/.dev.vars
+
+ prerendering static routes 
+23:20:19   ├─ /backstage/index.html (+7ms) 
+23:20:19   ├─ /index.html (+4ms) 
+23:20:19 ✓ Completed in 121ms.
+
+23:20:19 [build] Rearranging server assets...
+23:20:19 [build] ✓ Completed in 248ms.
+23:20:19 [@astrojs/cloudflare] Injected immutable Cache-Control for /_astro/* into _headers.
+23:20:19 [build] Server built in 461ms
+23:20:19 [build] Complete!
+
+── server ──
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4382
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+23:20:20 [vite] Re-optimizing dependencies because vite config has changed
+23:20:20 [vite] connected.
+23:20:20 [types] Generated 0ms
+23:20:20 [vite] Re-optimizing dependencies because vite config has changed
+ astro  v7.0.7 ready in 969 ms
+┃ Local    http://127.0.0.1:4382/
+23:20:20 watching for file changes...
+
+── operation ──
+
+> demo-runway@0.0.1 ops:check
+> node --experimental-strip-types scripts/ops-check.ts
+
+✗ receipt — failed in 30.5 ms  [operation]
+    boundary answered HTTP 500
+
+── flow ──
+
+> demo-runway@0.0.1 test:flow
+> playwright test --project=healthy
+
+
+Running 2 tests using 1 worker
+
+     1.1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › load the public demo (40ms)
+     1.2 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › await receipt boundary response (5.0s)
+  ✘  1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt (5.1s)
+  -  2 [healthy] › tests/demo-flow.spec.ts:82:1 › the stalled boundary stays narrated and the labeled action still answers
+
+
+  1) [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › await receipt boundary response 
+
+    TimeoutError: Step timeout of 5000ms exceeded.
+
+
+    Error: await receipt boundary response: signed receipt should become visible
+
+    expect(locator).toBeVisible() failed
+
+    Locator:  locator('#receipt-body')
+    Expected: visible
+    Received: hidden
+
+    Call log:
+      - await receipt boundary response: signed receipt should become visible with timeout 8000ms
+      - waiting for locator('#receipt-body')
+        - locator resolved to <dl hidden="" id="receipt-body" class="receipt-body" data-astro-cid-lcdefpme="">…</dl>
+        - unexpected value "hidden"
+        - waiting for" http://127.0.0.1:4382/" navigation to finish...
+        - navigated to "http://127.0.0.1:4382/"
+        13 × locator resolved to <dl hidden="" id="receipt-body" class="receipt-body" data-astro-cid-lcdefpme="">…</dl>
+           - unexpected value "hidden"
+
+
+
+    Error Context: test-results/artifacts/demo-flow-main-demo-flow-renders-the-signed-receipt-healthy/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/artifacts/demo-flow-main-demo-flow-renders-the-signed-receipt-healthy/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/artifacts/demo-flow-main-demo-flow-renders-the-signed-receipt-healthy/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt ───────────
+  1 skipped
+
+── leak ──
+
+> demo-runway@0.0.1 leak:check
+> node --experimental-strip-types scripts/leak-check.ts
+
+✓ leak check — passed
+    client assets    24 checked
+    response bodies  1 checked
+
+Integration check: FAILED in 8.5s (budget 45.0s)
+✗ receipt [operation] — operation failed (141.0 ms)
+✗ receipt [timeout] — flow failed (5875.8 ms)
+✓ receipt — leak passed (134.7 ms)
+Report: test-results/integration-report.json
