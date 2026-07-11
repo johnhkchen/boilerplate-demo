@@ -7,20 +7,28 @@ import {
   BAKED_PROJECT,
   CODE_SERVER_PORT,
   SESSION_GIT_DIR,
+  SESSION_PATCH_LIMIT_BYTES,
+  SESSION_PRESERVATION_PATH,
   SESSION_WORKTREE,
   boundedLog,
   buildAstroCommand,
   buildAstroConfig,
   buildCodeServerCommand,
   buildProvisionCommand,
+  buildPreservationCommand,
   classifyControlRequest,
   classifyProxyHost,
   isCommitRevision,
   isWebSocketUpgrade,
   parseSessionConfig,
+  parseDownInput,
+  parsePreservationInspection,
+  parseRuntimeSecrets,
   parseUpInput,
   readBoundedJson,
+  redactSecrets,
   safeErrorMessage,
+  safePublicError,
   sessionUrls,
 } from '../src/lib/session-lifecycle.ts';
 import {
@@ -67,6 +75,76 @@ test('up input accepts only one valid revision field', () => {
     assert.equal(result.ok, false);
     assert.equal(result.status, 400);
     assert.equal(result.error.code, 'invalid_revision');
+  }
+});
+
+test('runtime secret maps accept safe JSON and reject unsafe shapes without echoing values', () => {
+  assert.deepEqual(parseRuntimeSecrets('{}'), {});
+  assert.deepEqual(
+    parseRuntimeSecrets('{"DEMO_API_TOKEN":"alpha-secret-value","AGENT_KEY":"bravo-secret-value"}'),
+    { DEMO_API_TOKEN: 'alpha-secret-value', AGENT_KEY: 'bravo-secret-value' },
+  );
+  for (const value of [
+    undefined,
+    'not-json-sensitive-value',
+    '[]',
+    '{"bad-name":"long-enough-value"}',
+    '{"PATH":"long-enough-value"}',
+    '{"SESSION_SLUG":"long-enough-value"}',
+    '{"TOKEN":"short"}',
+    '{"TOKEN":42}',
+  ]) {
+    assert.throws(
+      () => parseRuntimeSecrets(value),
+      (error) => !String(error).includes('sensitive-value') && !String(error).includes('long-enough-value'),
+    );
+  }
+  const tooMany = Object.fromEntries(
+    Array.from({ length: 33 }, (_, index) => [`TOKEN_${index}`, `secret-value-${index}`]),
+  );
+  assert.throws(() => parseRuntimeSecrets(JSON.stringify(tooMany)), /at most 32/);
+});
+
+test('secret redaction replaces exact and overlapping values before public error bounding', () => {
+  const secrets = { SHORT: 'secret-1', LONG: 'secret-1-extended' };
+  assert.equal(
+    redactSecrets('before secret-1-extended and secret-1 after', secrets),
+    'before [REDACTED] and [REDACTED] after',
+  );
+  assert.equal(
+    safePublicError(new Error('first\nsecret-1-extended\tlast'), secrets, 100),
+    'first [REDACTED] last',
+  );
+});
+
+test('down input requires preserve, digest acknowledgement, or explicit force', () => {
+  const digest = 'a'.repeat(64);
+  assert.deepEqual(parseDownInput({ mode: 'preserve' }), {
+    ok: true,
+    status: 200,
+    value: { mode: 'preserve' },
+  });
+  assert.deepEqual(parseDownInput({ mode: 'destroy', preservationSha256: digest }), {
+    ok: true,
+    status: 200,
+    value: { mode: 'destroy', preservationSha256: digest },
+  });
+  assert.deepEqual(parseDownInput({ mode: 'destroy', force: true }), {
+    ok: true,
+    status: 200,
+    value: { mode: 'destroy', force: true },
+  });
+  for (const value of [
+    null,
+    {},
+    { mode: 'destroy' },
+    { mode: 'destroy', force: false },
+    { mode: 'destroy', force: true, extra: true },
+    { mode: 'destroy', preservationSha256: 'A'.repeat(64) },
+  ]) {
+    const result = parseDownInput(value);
+    assert.equal(result.ok, false);
+    assert.equal(result.error.code, 'invalid_down_request');
   }
 });
 
@@ -200,6 +278,39 @@ test('provision command uses fixed paths and environment variables without user 
   assert.match(command, /worktree add --detach/);
   assert.match(command, /exit 42/);
   assert.doesNotMatch(command, new RegExp(revision));
+});
+
+test('preservation command stages all changes and emits a bounded binary patch contract', () => {
+  const command = buildPreservationCommand();
+  assert.match(command, /git .* add -A/);
+  assert.match(command, /diff --cached --binary --full-index HEAD/);
+  assert.match(command, /sha256sum/);
+  assert.match(command, /wc -c/);
+  assert.match(command, new RegExp(SESSION_PRESERVATION_PATH.replaceAll('/', '\\/')));
+  assert.equal(SESSION_PATCH_LIMIT_BYTES, 2 * 1024 * 1024);
+});
+
+test('preservation metadata parser accepts strict clean and dirty results', () => {
+  const digest = 'b'.repeat(64);
+  assert.deepEqual(
+    parsePreservationInspection(`state=clean\nbase_revision=${revision}\n`),
+    { state: 'clean', baseRevision: revision },
+  );
+  assert.deepEqual(
+    parsePreservationInspection(
+      `state=dirty\nbase_revision=${revision}\nbytes=123\nsha256=${digest}\n`,
+    ),
+    { state: 'dirty', baseRevision: revision, bytes: 123, sha256: digest },
+  );
+  for (const value of [
+    '',
+    `state=clean\nbase_revision=main\n`,
+    `state=dirty\nbase_revision=${revision}\nbytes=0\nsha256=${digest}\n`,
+    `state=dirty\nbase_revision=${revision}\nbytes=1\nsha256=nope\n`,
+    `state=clean\nbase_revision=${revision}\nextra=yes\n`,
+  ]) {
+    assert.throws(() => parsePreservationInspection(value), /invalid preservation metadata/);
+  }
 });
 
 test('Astro config contains the exact branded HMR contract', () => {

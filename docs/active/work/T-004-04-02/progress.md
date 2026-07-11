@@ -26,10 +26,10 @@ Only explicit ticket files will be staged for commits.
 - [x] Complete `design.md`.
 - [x] Complete `structure.md`.
 - [x] Complete `plan.md`.
-- [ ] Add and test pure runtime-secret contracts.
+- [x] Add and test pure runtime-secret contracts.
 - [ ] Inject launch secrets into managed services.
 - [ ] Redact secret values from logs/errors/API/CLI.
-- [ ] Add and test typed teardown preservation contracts.
+- [x] Add and test typed teardown preservation contracts.
 - [ ] Implement coordinator patch export/digest acknowledgement.
 - [ ] Implement CLI patch persistence and explicit force path.
 - [ ] Regenerate Sessions Worker bindings.
@@ -44,7 +44,7 @@ Only explicit ticket files will be staged for commits.
 |---|---|
 | instruction/ticket read | complete |
 | initial worktree isolation | complete; unrelated changes recorded above |
-| targeted lifecycle tests | pending |
+| targeted lifecycle tests | 22/22 pass after pure secret/down contracts |
 | full `npm test` | pending |
 | `npm run session:validate` | pending |
 | `npm run typecheck` | pending |
@@ -58,4 +58,5 @@ None at implementation start.
 
 ## Commit ledger
 
-- Pending: RDSPI blueprint artifacts.
+- `1034245` — RDSPI blueprint artifacts.
+- Pending: pure secret and teardown contracts.
