@@ -6,4 +6,4 @@ to keep it lean. One line per epic: what it delivered. Full cards live in
 
 ---
 
-_Nothing cleared yet._
+- **E-004 collaborative-demo-environments** — a stable public demo at `demo.b28.dev` with instant version-alias promote/rollback, plus a private, Access-gated collaborative session (live preview + browser IDE on a Cloudflare Container) an owner hands off as two links. Proven end-to-end in production 2026-07-11.
