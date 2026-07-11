@@ -23,7 +23,6 @@ export const BACKSTAGE_STEP = {
   submitWithoutSecondCredential: 'submit without a second credential',
   completeFromChecklist: 'complete an entry from the checklist',
   deleteFromChecklist: 'delete an entry from the checklist',
-  confirmCanonical: 'confirm canonical store state',
 } as const;
 
 // The shared low-stakes passcode used by the backstage phone flow. The single value the
