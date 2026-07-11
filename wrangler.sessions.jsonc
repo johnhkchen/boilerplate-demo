@@ -9,6 +9,15 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,
+  "routes": [
+    { "pattern": "demo-session.b28.dev", "custom_domain": true },
+    { "pattern": "code-session.b28.dev", "custom_domain": true }
+  ],
+  "vars": {
+    "SESSION_SLUG": "session",
+    "SESSION_DOMAIN": "b28.dev",
+    "SESSION_REPOSITORY_URL": "https://github.com/johnhkchen/boilerplate-demo.git"
+  },
   // Do not infer the stable App Worker's local .dev.vars keys into this
   // separate Worker. Session launch secrets are defined by later lifecycle work.
   "secrets": { "required": [] },
@@ -23,9 +32,15 @@
     }
   ],
   "durable_objects": {
-    "bindings": [{ "name": "Sandbox", "class_name": "Sandbox" }]
+    "bindings": [
+      { "name": "Sandbox", "class_name": "Sandbox" },
+      { "name": "SESSION_COORDINATOR", "class_name": "SessionCoordinator" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sandbox"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Sandbox"] },
+    { "tag": "v2", "new_sqlite_classes": ["SessionCoordinator"] }
+  ],
   "observability": {
     "enabled": true,
     "logs": { "enabled": true, "head_sampling_rate": 1 },
