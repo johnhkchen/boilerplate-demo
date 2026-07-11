@@ -10,8 +10,8 @@
 - Focused verification: complete and green.
 - Full unit verification: complete and green.
 - Type verification: complete and green.
-- Final diff review: pending before Review.
-- Review artifact: pending.
+- Final diff review: complete.
+- Review artifact: complete.
 
 ## Workflow artifacts completed
 
@@ -246,15 +246,18 @@ Result:
 ## Commits
 
 - `11c6384` — `docs(T-008-01-02): research through implementation plan`.
-- Implementation commit: pending immediately after this progress snapshot.
-- Review artifact commit: pending after final review.
+- `a10c826` — `feat(T-008-01-02): add completion and delete store operations`.
+- Review artifact commit: pending after this final progress update.
 
-## Remaining before Review
+## Final diff review
 
-1. Run `git diff --check` over the final implementation worktree.
-2. Inspect owned diffs and staged paths.
-3. Commit implementation and this progress artifact explicitly.
-4. Record the implementation commit hash in this file.
-5. Write `review.md` with acceptance mapping, coverage, and open concerns.
-6. Commit final progress/review artifacts.
-7. Stop without editing ticket phase or status.
+- `git show --check a10c826` passed with no whitespace errors.
+- Commit `a10c826` contains exactly the five implementation/test files and `progress.md`.
+- SQL mutations retain exact `WHERE id = ?` predicates.
+- List SQL retains exact `ORDER BY id ASC` ordering.
+- The canonical mapper returns exactly six persisted fields.
+- The temporary feed mapper returns exactly four current feed fields.
+- No schema, package, route runtime, ticket, or provenance file entered the commit.
+- Only Lisa-owned provenance and ticket phase/status transitions remain dirty.
+- `review.md` is the final required workflow artifact.
+- No implementation work remains.
