@@ -1,0 +1,16 @@
+
+==> stage 4 (Domain): parseSessionConfig + sessionUrls under the new zone
+derived previewHost: demo-session.new-owner-zone.example
+derived editorHost:  code-session.new-owner-zone.example
+session URLs:        {"previewUrl":"https://demo-session.new-owner-zone.example","editorUrl":"https://code-session.new-owner-zone.example"}
+classifyProxyHost(preview): preview
+classifyProxyHost(old author host): null
+FINDING (harness seam): uppercase placeholder rejected -> SESSION_DOMAIN must be a lowercase DNS name
+--- derived hosts must equal the context route patterns:
+  15:    { "pattern": "demo-session.new-owner-zone.example", "custom_domain": true },
+  16:    { "pattern": "code-session.new-owner-zone.example", "custom_domain": true }
+  [ok] one zone change re-points both session routes consistently
+  [ok] zero b28.dev routes/vars in the context (narrative comments are the
+  harness's allowed residue, not couplings)
+  deferred (live leg): real DNS resolution off b28.dev needs a real
+  new-owner zone; new-owner-zone.example is RFC 2606-unroutable by intent.

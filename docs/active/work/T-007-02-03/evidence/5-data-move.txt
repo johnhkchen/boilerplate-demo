@@ -1,0 +1,41 @@
+
+==> stage 5 (Data): D1 export/import between two drill-owned local stores
+--- author stand-in store (drill-owned copy of the author config + migrations;
+    wrangler's default local state lands in author-side/.wrangler — the real
+    repo's .wrangler/state is never written. wrangler d1 export has no
+    --persist-to flag, so each side gets its own directory instead.)
+│ name                              │ status │
+├───────────────────────────────────┼────────┤
+│ 0001_create_backstage_entries.sql │ ✅     │
+└───────────────────────────────────┴────────┘
+    }
+  }
+]
+🌀 Exporting SQL to /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/backstage-rows.sql...
+Done!
+  rows in export dump: 2
+--- new-owner store (the context's own default local state, $CTX/.wrangler)
+│ name                              │ status │
+├───────────────────────────────────┼────────┤
+│ 0001_create_backstage_entries.sql │ ✅     │
+└───────────────────────────────────┴────────┘
+    }
+  }
+]
+--- verify the moved rows in the new-owner store
+  [
+    {
+      "results": [
+        {
+          "n": 2
+        }
+      ],
+      "success": true,
+      "meta": {
+        "duration": 0
+      }
+    }
+  ]
+  [ok] 2/2 fixture rows moved author-store -> new-owner store
+  deferred (live leg): the same export piped to 'wrangler d1 execute --remote'
+  against the new account's freshly provisioned D1.

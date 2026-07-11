@@ -1,0 +1,8 @@
+
+==> stage 2 (Repo): init, push to a new-owner remote, clone back, verify
+remotes in the clone-back tree:
+  origin	/private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/new-owner.git (fetch)
+  origin	/private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/new-owner.git (push)
+  [ok] no author remote anywhere in the round trip
+  [ok] clone-back tree is byte-identical to the context (tracked files)
+  note: .dev.vars correctly NOT in history (context .gitignore held)

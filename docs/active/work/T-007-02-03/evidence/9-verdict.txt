@@ -1,0 +1,20 @@
+
+==> stage 9: per-category verdicts (transcribed to transfer-log.md + scorecard)
+  1 Repo      CLEAN (local drill) — context committed + pushed to a new-owner
+              remote, round-trip verified, no author remote, .dev.vars out of
+              history. Live leg deferred: create the real GitHub repo and set
+              SESSION_REPOSITORY_URL (HTTPS-only validation bars local stand-ins).
+  2 Resources CLEAN (definitions, local run) — deploy:dry + session:validate green
+              outside the author's account; Worker runs and serves locally.
+              Live leg deferred: real deploy under a second Cloudflare account
+              (none on this machine; deploying from here would hit production).
+  3 Domain    GAP — test/promote.test.mjs:246 hardcodes demo.b28.dev against the
+              real wrangler.jsonc: the re-pointed tree fails its own npm test.
+              Also finding: harness placeholder NEW-OWNER-ZONE.example fails the
+              runtime's lowercase DNS_NAME validation. Config side is clean (zero
+              b28.dev routes/vars; one zone change re-points all three hosts).
+              Live leg deferred: real zone delegation + DNS resolution.
+  4 Data      GAP (DO half) / CLEAN (D1 half, local drill) — backstage rows moved
+              author-store -> new-owner store and SERVE through the Worker; but
+              SESSION_COORDINATOR DO state has no export/import seam at all.
+              Live leg deferred: remote import into the new account's D1.

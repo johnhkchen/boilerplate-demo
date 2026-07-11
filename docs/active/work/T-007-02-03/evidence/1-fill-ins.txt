@@ -1,0 +1,26 @@
+
+==> stage 1: owner fill-ins (zone, fresh secrets); each named, none silent
+fill-in 1: zone -> new-owner-zone.example (lowercase).
+  WHY: the harness placeholder NEW-OWNER-ZONE.example is uppercase and
+  src/lib/session-lifecycle.ts DNS_NAME only accepts lowercase — the
+  scrubbed Session Worker cannot parse its own config until a real
+  (lowercase) zone is filled. Recorded as a drill finding (stage 4 proves
+  the rejection). new-owner-zone.example stays RFC 2606-unroutable:
+  we do not pretend to own a live zone.
+  /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/context/wrangler.jsonc:27:  "routes": [{ "pattern": "demo.new-owner-zone.example", "custom_domain": true }],
+  /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/context/wrangler.sessions.jsonc:15:    { "pattern": "demo-session.new-owner-zone.example", "custom_domain": true },
+  /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/context/wrangler.sessions.jsonc:16:    { "pattern": "code-session.new-owner-zone.example", "custom_domain": true }
+  /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/context/wrangler.sessions.jsonc:20:    "SESSION_DOMAIN": "new-owner-zone.example",
+  [ok] no uppercase zone placeholder remains
+fill-in 2: fresh new-owner-generated secrets into context .dev.vars.
+  WHY: the scrub drops the author's .dev.vars entirely (no author secret
+  to inherit); the Worker cannot boot without DEMO_SIGNING_KEY and
+  DEMO_PASSCODE. Values generated this run, never printed. Rotation
+  PROOF (leak/ops) is T-007-02-02's row, not this drill's.
+  [ok] .dev.vars written (2 fresh values)
+fill-in 3 (deferred until demanded): local D1 database_id placeholder —
+  applied by stage 3/5 only if the local toolchain refuses the removed id.
+NOT filled: SESSION_REPOSITORY_URL stays https://github.com/NEW-OWNER/REPO.git.
+  parseSessionConfig requires a credential-free HTTPS URL, so a local
+  file:// stand-in repo is rejected by the runtime's own validation;
+  pointing at the new owner's real GitHub repo is a live-leg fill-in.

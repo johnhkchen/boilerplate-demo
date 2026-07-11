@@ -1,0 +1,19 @@
+
+==> stage 8 (Data gap): attempt an offline export of SESSION_COORDINATOR DO state
+--- wrangler's own command surface, searched for a DO-storage export:
+    wrangler r2                     📦 Manage R2 buckets & objects
+  
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnknown argument: durable-objects[0m
+  
+  
+  wrangler
+  
+  COMMANDS
+    wrangler docs [search..]        📚 Open Wrangler's command documentation in your browser
+  GAP CONFIRMED: no wrangler subcommand exports Durable Object storage.
+  The SessionRecord under SESSION_STORAGE_KEY (src/session-worker.ts ->
+  SessionCoordinator) is reachable only through the live Worker's own
+  control API (/__session/status); there is no offline export/import seam.
+  Seam: wrangler.sessions.jsonc:durable_objects.bindings -> SESSION_COORDINATOR.
+  (Mitigating fact: the record is DESIRED state — one small JSON document —
+  and sessions are re-creatable; but the transfer is not clean, so: gap.)

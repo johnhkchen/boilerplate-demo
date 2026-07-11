@@ -1,0 +1,15 @@
+
+==> stage 7 (Domain gap): npm test's promote suite vs the re-pointed config
+  ✖ extractCustomDomain reads the real wrangler.jsonc (0.917333ms)
+  ✔ extractCustomDomain handles key order and absence (0.20175ms)
+  ℹ pass 19
+  ℹ fail 1
+  ✖ extractCustomDomain reads the real wrangler.jsonc (0.917333ms)
+    + 'demo.new-owner-zone.example'
+    - 'demo.b28.dev'
+      actual: 'demo.new-owner-zone.example',
+      expected: 'demo.b28.dev',
+  GAP CONFIRMED: test/promote.test.mjs:246 asserts the literal demo.b28.dev
+  against the real wrangler.jsonc — a re-pointed tree fails its own npm test
+  until that expectation moves with the config. Seam: test/promote.test.mjs
+  ('extractCustomDomain reads the real wrangler.jsonc').

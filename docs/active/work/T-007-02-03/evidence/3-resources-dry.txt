@@ -1,0 +1,52 @@
+
+==> stage 3 (Resources): npm install, deploy:dry, session:validate in the context
+npm warn allow-scripts   workerd@1.20260708.1 (postinstall: node install.js)
+npm warn allow-scripts
+npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
+--- npm run deploy:dry (App Worker: astro build + wrangler deploy --dry-run)
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/rolldown-runtime_Upwk45wU.mjs                      │ esm  │ 0.54 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/server_BNNjRfh4.mjs                                │ esm  │ 159.92 KiB │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/service_DkoVOpZd.mjs                               │ esm  │ 38.67 KiB  │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/shorthash_BMJi2pTU.mjs                             │ esm  │ 2.01 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ chunks/static-image-collection_BpfHRa6D.mjs               │ esm  │ 2.03 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ virtual_astro_middleware.mjs                              │ esm  │ 0.15 KiB   │
+├───────────────────────────────────────────────────────────┼──────┼────────────┤
+│ Total (17 modules)                                        │      │ 282.25 KiB │
+└───────────────────────────────────────────────────────────┴──────┴────────────┘
+✨ Read 5 files from the assets directory /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/context/dist/client
+Total Upload: 539.84 KiB / gzip: 141.34 KiB
+Your Worker has access to the following bindings:
+Binding                              Resource                     
+env.BACKSTAGE_DB                     D1 Database                  
+env.ASSETS                           Assets                       
+env.CF_VERSION_METADATA              Worker Version Metadata      
+env.DEMO_FAULT ("off")               Environment Variable         
+
+--dry-run: exiting now.
+  [ok] deploy:dry green WITHOUT a database_id (auto-provision contract)
+--- npm run session:validate (Session Worker: types + tsc + dry-run)
+Your Worker has access to the following bindings:
+Binding                                                                   Resource                  
+env.Sandbox (Sandbox)                                                     Durable Object            
+env.SESSION_COORDINATOR (SessionCoordinator)                              Durable Object            
+env.SESSION_SLUG ("session")                                              Environment Variable      
+env.SESSION_DOMAIN ("new-owner-zone.example")                             Environment Variable      
+env.SESSION_REPOSITORY_URL ("https://github.com/NEW-OWNER/REPO.git")      Environment Variable      
+
+The following containers are available:
+- demo-runway-sessions-sandbox (/private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/6aa4d9cc-a095-4959-9024-8427ddf13cb7/scratchpad/transfer-drill/context/Dockerfile.session)
+
+--dry-run: exiting now.
+  [ok] both Workers' definitions reproduce outside the author's account
+  deferred (live leg): npm run deploy + session deploy under a REAL second
+  Cloudflare account — no second account on this machine (wrangler whoami:
+  author only), and deploying from here would overwrite the production
+  demo-runway Worker (T-006-02-01 finding #2).
+  scope cut: Dockerfile.session image BUILD not exercised (Docker toolchain,
+  minutes of cost); session:validate covers the container config contract.

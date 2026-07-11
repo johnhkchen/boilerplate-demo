@@ -1,0 +1,25 @@
+
+==> stage 6 (Resources+Domain+Data): wrangler dev serves the moved rows off b28.dev
+wrangler dev pid 47157; polling readiness on 127.0.0.1:8799 ...
+  [ok] GET / -> 200 at 127.0.0.1 (a host off b28.dev)
+--- GET /api/backstage/feed with the fresh new-owner passcode:
+  {
+    "schemaVersion": 1,
+    "gate": "backstage",
+    "count": 2,
+    "entries": [
+      {
+        "type": "reference",
+        "url": "https://example.com/spec",
+        "text": "TRANSFER-DRILL fixture: sponsor spec link",
+        "submittedAt": "2026-07-11T00:00:00Z"
+      },
+      {
+        "type": "feedback",
+        "url": "https://example.com/note",
+        "text": "TRANSFER-DRILL fixture: stakeholder note",
+        "submittedAt": "2026-07-11T00:01:00Z"
+      }
+    ]
+  }
+  [ok] both moved rows serve through the Worker under the new-owner context
