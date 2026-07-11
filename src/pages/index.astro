@@ -8,23 +8,20 @@ const DEMO_NAME = 'Demo Runway';
 const PRIMARY_ACTION_LABEL = 'Ask for a fresh note';
 // ────────────────────────────────────────────────────────────────
 
-const tagline = 'The starting line every demo inherits.';
-const title = `${DEMO_NAME} — the starting line every demo inherits`;
+const tagline = 'Watch the server sign a note';
+const title = `${DEMO_NAME} — Watch the server sign a note`;
 const description =
-  'A live demo page: watch the server answer with a freshly signed note, and leave the team a note of your own.';
+  'Watch the server sign a fresh note, then leave one for the team.';
 ---
 
 <BaseLayout title={title} description={description}>
   <main>
     <section class="clay-surface" aria-labelledby="title">
-      <p class="eyebrow">Start here</p>
+      <p class="eyebrow">Try the demo</p>
       <h1 id="title">{DEMO_NAME}</h1>
       <p class="tagline">{tagline}</p>
       <p class="lede">
-        You've landed on a working demo page — live right now, and yours to
-        try. Two things to do here: watch the card below get a freshly signed
-        answer from the server, and further down, leave the team a note of
-        your own.
+        Watch the server sign a fresh note, then leave a thought for the team.
       </p>
     </section>
 
@@ -33,13 +30,10 @@ const description =
          server (/api/receipt) for a freshly signed note. The signing key stays on
          the server — it is never in this page's source or scripts. -->
     <section class="clay-surface receipt" aria-labelledby="receipt-heading" aria-live="polite">
-      <p class="eyebrow">Watch the server answer</p>
-      <h2 id="receipt-heading">A signed note, made just now</h2>
+      <p class="eyebrow">Watch the server sign</p>
+      <h2 id="receipt-heading">A fresh signed note</h2>
       <p class="lede">
-        The page around this card is just a file — it loads instantly. This
-        card is the one live part: it asks the server for a freshly signed
-        note, made with a key your browser never sees. Here's what came back —
-        and you can ask for another anytime.
+        The server signs each note with a key that stays out of your browser.
       </p>
       <div class="clay-well receipt-panel">
         <p id="receipt-status" class="receipt-status">Asking the server…</p>
@@ -49,11 +43,11 @@ const description =
             <dd id="receipt-issued">—</dd>
           </div>
           <div class="receipt-row">
-            <dt>One-time tag</dt>
+            <dt>One-time ID</dt>
             <dd id="receipt-nonce" class="receipt-code">—</dd>
           </div>
           <div class="receipt-row">
-            <dt>The server's signature</dt>
+            <dt>Server signature</dt>
             <dd id="receipt-signature" class="receipt-code">—</dd>
           </div>
         </dl>
@@ -65,10 +59,9 @@ const description =
 
     <section class="clay-surface" aria-labelledby="note-heading">
       <p class="eyebrow">Leave a note</p>
-      <h2 id="note-heading">Pass the team a thought</h2>
+      <h2 id="note-heading">Share a thought with the team</h2>
       <p class="lede">
-        Got a link, an example, or a bit of feedback for the people building
-        this? There's a page for that — no account, no sign-in.
+        Add a link, example, or feedback without an account or sign-in.
       </p>
       <a id="backstage-link" class="backstage-link" href="/backstage">
         Leave a note for the team
@@ -122,7 +115,7 @@ const description =
       if (bodyEl) bodyEl.hidden = false;
     } catch {
       if (statusEl) {
-        statusEl.textContent = "The server didn't answer just now — try a refresh.";
+        statusEl.textContent = "The server didn't answer, so try again.";
       }
     }
   }
