@@ -7,7 +7,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs test/promote.test.mjs test/session-image-check.test.mjs",
+    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs test/promote.test.mjs test/session-image-check.test.mjs test/session-lifecycle.test.mjs",
     "ops:check": "node --experimental-strip-types scripts/ops-check.ts",
     "leak:check": "node --experimental-strip-types scripts/leak-check.ts",
     "integration:check": "node --experimental-strip-types scripts/integration-check.ts",
@@ -22,6 +22,7 @@
     "session:validate": "npm run session:types:check && tsc --noEmit --project tsconfig.sessions.json && wrangler deploy --dry-run --config wrangler.sessions.jsonc",
     "session:image:build": "docker build --platform linux/amd64 --file Dockerfile.session --tag demo-runway-session:local .",
     "session:image:check": "node --experimental-strip-types scripts/session-image-check.ts",
+    "session": "node --experimental-strip-types scripts/session.ts",
     "typecheck": "astro check && tsc --noEmit && npm run worker:types:check",
     "verify": "npm test && npm run typecheck && npm run integration:check && npm run test:flow:backstage && npm run deploy:dry",
     "dev": "astro dev",

@@ -23,6 +23,11 @@ import {
   safeErrorMessage,
   sessionUrls,
 } from '../src/lib/session-lifecycle.ts';
+import {
+  parseSessionArguments,
+  parseSessionWorkerUrl,
+  runSessionCommand,
+} from '../scripts/session.ts';
 
 const revision = '0123456789abcdef0123456789abcdef01234567';
 const config = parseSessionConfig({
@@ -196,4 +201,93 @@ test('safe errors are single-line and bounded', () => {
   assert.equal(safeErrorMessage(new Error('first\nsecond'), 20), 'first second');
   assert.equal(safeErrorMessage('abcdefgh', 4), 'abcd');
   assert.equal(safeErrorMessage(''), 'unknown session error');
+});
+
+test('CLI parser maps the four commands to the control contract', () => {
+  assert.deepEqual(parseSessionArguments(['up', revision]), {
+    operation: 'up',
+    method: 'POST',
+    path: '/__session/up',
+    revision,
+  });
+  assert.deepEqual(parseSessionArguments(['status']), {
+    operation: 'status',
+    method: 'GET',
+    path: '/__session/status',
+  });
+  assert.deepEqual(parseSessionArguments(['logs']), {
+    operation: 'logs',
+    method: 'GET',
+    path: '/__session/logs',
+  });
+  assert.deepEqual(parseSessionArguments(['down']), {
+    operation: 'down',
+    method: 'POST',
+    path: '/__session/down',
+  });
+  for (const argv of [[], ['up'], ['up', 'main'], ['status', 'extra'], ['wat']]) {
+    assert.throws(() => parseSessionArguments(argv));
+  }
+});
+
+test('CLI worker URL accepts only credential-free HTTP(S) origins', () => {
+  assert.equal(parseSessionWorkerUrl('https://sessions.example.com').href, 'https://sessions.example.com/');
+  assert.equal(parseSessionWorkerUrl('http://localhost:8787').href, 'http://localhost:8787/');
+  for (const value of [
+    undefined,
+    '',
+    'sessions.example.com',
+    'ftp://sessions.example.com',
+    'https://token@sessions.example.com',
+    'https://sessions.example.com/path',
+  ]) {
+    assert.throws(() => parseSessionWorkerUrl(value));
+  }
+});
+
+test('CLI up sends the exact JSON request and prints successful JSON', async () => {
+  const writes = { stdout: '', stderr: '' };
+  let observed;
+  const exitCode = await runSessionCommand({
+    argv: ['up', revision],
+    workerUrl: 'https://sessions.example.com',
+    fetchImpl: async (input, init) => {
+      observed = { url: String(input), init };
+      return Response.json({ ok: true, operation: 'up' });
+    },
+    stdout: { write: (value) => ((writes.stdout += value), true) },
+    stderr: { write: (value) => ((writes.stderr += value), true) },
+  });
+  assert.equal(exitCode, 0);
+  assert.equal(observed.url, 'https://sessions.example.com/__session/up');
+  assert.equal(observed.init.method, 'POST');
+  assert.equal(observed.init.body, JSON.stringify({ revision }));
+  assert.equal(new Headers(observed.init.headers).get('content-type'), 'application/json');
+  assert.equal(writes.stdout, '{\n  "ok": true,\n  "operation": "up"\n}\n');
+  assert.equal(writes.stderr, '');
+});
+
+test('CLI reports Worker and invocation failures without throwing', async () => {
+  const httpWrites = { stdout: '', stderr: '' };
+  const httpExit = await runSessionCommand({
+    argv: ['status'],
+    workerUrl: 'http://localhost:8787',
+    fetchImpl: async () => Response.json({ ok: false, error: { code: 'not_ready' } }, { status: 503 }),
+    stdout: { write: (value) => ((httpWrites.stdout += value), true) },
+    stderr: { write: (value) => ((httpWrites.stderr += value), true) },
+  });
+  assert.equal(httpExit, 1);
+  assert.equal(httpWrites.stdout, '');
+  assert.match(httpWrites.stderr, /not_ready/);
+
+  const usageWrites = { stdout: '', stderr: '' };
+  const usageExit = await runSessionCommand({
+    argv: ['up', 'main'],
+    workerUrl: 'http://localhost:8787',
+    stdout: { write: (value) => ((usageWrites.stdout += value), true) },
+    stderr: { write: (value) => ((usageWrites.stderr += value), true) },
+  });
+  assert.equal(usageExit, 2);
+  assert.match(usageWrites.stderr, /40-character/);
+  assert.match(usageWrites.stderr, /usage:/);
 });
