@@ -7,8 +7,10 @@
   "main": "src/session-worker.ts",
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
-  "workers_dev": true,
-  "preview_urls": true,
+  // Access applications protect the two exact custom domains below. Do not
+  // publish alternate Worker hostnames that fall outside those applications.
+  "workers_dev": false,
+  "preview_urls": false,
   "routes": [
     { "pattern": "demo-session.b28.dev", "custom_domain": true },
     { "pattern": "code-session.b28.dev", "custom_domain": true }
@@ -18,10 +20,17 @@
     "SESSION_DOMAIN": "b28.dev",
     "SESSION_REPOSITORY_URL": "https://github.com/johnhkchen/boilerplate-demo.git"
   },
-  // A JSON object of environment-name to secret value, configured with
-  // `wrangler secret put`. Values are injected only when session services start.
-  // Use `{}` when this demo needs no runtime credentials.
-  "secrets": { "required": ["SESSION_RUNTIME_SECRETS"] },
+  // Runtime credentials and account-specific Access identifiers are configured
+  // with `wrangler secret put`, never committed. Access uses distinct audience
+  // tags so a preview assertion cannot authorize the editor (or vice versa).
+  "secrets": {
+    "required": [
+      "SESSION_RUNTIME_SECRETS",
+      "SESSION_ACCESS_TEAM_DOMAIN",
+      "SESSION_ACCESS_PREVIEW_AUD",
+      "SESSION_ACCESS_EDITOR_AUD"
+    ]
+  },
   "containers": [
     {
       "class_name": "Sandbox",
