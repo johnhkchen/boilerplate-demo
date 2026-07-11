@@ -48,8 +48,37 @@
 
 ## Deviations
 
-- None.
+- The Structure/Plan originally left `scripts/session.ts` unchanged. Once alternate private
+  Worker hostnames were disabled, the existing CLI had no way to cross identity-only Access on
+  the exact custom domains. Current Cloudflare guidance supports an interactive user token from
+  `cloudflared access token`, sent as `cf-access-token`. The implementation therefore adds an
+  optional `SESSION_ACCESS_TOKEN` input to the owner CLI. This preserves identity policy and
+  avoids introducing a Service Auth/shared-bypass credential.
 
 ## Implementation log
 
 - Implement phase initialized after all four planning artifacts were written and committed.
+- Added `jose` 6.2.3 and a fail-closed per-surface verifier with remote JWKS, RS256, issuer,
+  audience, registered lifetime, application type, and identity-claim checks.
+- Added 10 focused RSA/JWK tests; focused suite passes 10/10.
+- Full suite after the verifier passes 146/146, including sibling work-safety coverage.
+- Integrated verification before both HTTP and WebSocket coordinator dispatch, stripped the
+  assertion/identity header/Access cookie before Sandbox forwarding, and preserved sibling
+  secret-redaction and safe-teardown behavior.
+- Disabled private `workers.dev` and version-preview URLs; declared three required Access
+  bindings and regenerated Wrangler types.
+- `npm run session:validate` passes; bundle is 677.41 KiB / 147.32 KiB gzip and the session
+  image dry build completes.
+- Added identity-token support to the owner CLI using `SESSION_ACCESS_TOKEN` /
+  `cf-access-token`; tokens are bounded, never printed, and included in exact-value redaction.
+- Focused Access/lifecycle suite passes 38/38 after the CLI change; full suite passes 148/148.
+- Added `docs/knowledge/session-access.md` with exact two-application setup, narrow policy,
+  binding, CLI login, clean-browser matrix, revocation, logging, and safe rollback procedures.
+- Updated the lifecycle guide to remove the obsolete private `workers.dev` URL and future-ticket
+  security wording, and to document Access credential stripping.
+- Implementation commits so far:
+  - `f169b1d` — Access verifier, dependency lock, focused tests, full-test registration;
+  - `e07939f` — sibling work-safety fix also captured the current Worker integration while
+    preserving both tickets' code in the shared worktree;
+  - `6876192` — alternate-origin closure and generated Access bindings.
+  - `fac40c5` — interactive identity Access token support for owner CLI plus tests.

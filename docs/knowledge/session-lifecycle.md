@@ -91,10 +91,13 @@ npm run session:types:check
 
 ## Owner commands
 
-Set the already-deployed Sessions Worker origin in the shell:
+For production, obtain an interactive identity token and use the Access-protected editor origin
+(see `docs/knowledge/session-access.md`):
 
 ```bash
-export SESSION_WORKER_URL=https://demo-runway-sessions.<account>.workers.dev
+cloudflared access login https://code-session.b28.dev
+export SESSION_ACCESS_TOKEN="$(cloudflared access token -app=https://code-session.b28.dev)"
+export SESSION_WORKER_URL=https://code-session.b28.dev
 ```
 
 For local Wrangler development:
@@ -276,9 +279,10 @@ The coordinator requires desired phase `ready` and a running target process befo
 It returns 503 rather than serving the baked baseline or a stale workspace.
 
 Ordinary requests use `sandbox.containerFetch(request, port)`. Case-insensitive WebSocket
-upgrades use `sandbox.wsConnect(request, port)`. After removing one internal routing header,
-the original URL, hostname, path, query, method, headers, body, cookies, and WebSocket
-subprotocol reach the service.
+upgrades use `sandbox.wsConnect(request, port)`. The original URL, hostname, path, query,
+method, body, non-Access headers/cookies, and WebSocket subprotocol reach the service. The
+Sessions Worker removes the verified Access assertion, Access identity convenience header,
+`CF_Authorization` cookie, and its own internal routing header before container forwarding.
 
 Local evidence observed:
 
@@ -359,12 +363,15 @@ residual `proxy-everything` helper container. No session container or helper rem
 
 ## Security gate
 
-This ticket does not claim production authorization.
+code-server uses `--auth none` internally because Cloudflare Access is the identity layer. The
+Sessions Worker now validates signature, issuer, lifetime, identity shape, and the distinct
+preview/editor application audience before proxying either HTTP or WebSocket traffic. Its
+alternate `workers.dev` and version-preview hostnames are disabled. The control API uses an
+interactive identity token and has no shared bypass token. The exact Access applications,
+policies, deployment, and revocation procedure live in `docs/knowledge/session-access.md`.
 
-code-server currently uses `--auth none` because Cloudflare Access is the decided identity
-layer. `T-004-04-01` must put Access on both exact Custom Domains and validate origin assertions
-before this Worker is deployed for collaboration. The control API must also be protected; it
-has no shared bypass token by design.
+Repository tests and dry-run bundling prove the implementation boundary; this document does not
+claim a production Access application or real identity/revocation test has occurred.
 
 No token, password, Cloudflare credential, Git credential, `.dev.vars`, or agent credential is
 baked into the image or stored in the coordinator/worktree. Configured secret values are passed
@@ -412,7 +419,8 @@ Before claiming the epic's production handoff:
 
 1. enable Workers Paid Containers on the sovereign project account;
 2. deploy the Sessions Worker and image;
-3. configure Access on both exact Custom Domains and the control API;
+3. configure the two exact-host Access applications and distinct audiences in
+   `docs/knowledge/session-access.md`;
 4. verify both domains' certificates and DNS;
 5. bring up an exact production commit;
 6. open preview and code-server in a clean authenticated browser;
