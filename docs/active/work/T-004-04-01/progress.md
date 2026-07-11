@@ -8,25 +8,25 @@
 - Design: complete and committed (`525a037`).
 - Structure: complete and committed (`3c80f66`).
 - Plan: complete and committed (`d1025ae`).
-- Implementation: in progress.
-- Review: pending.
+- Implementation: complete.
+- Review: complete.
 
 ## Implementation checklist
 
-- [ ] Add pinned `jose` runtime dependency without unrelated upgrades.
-- [ ] Implement Access configuration parsing and per-surface audience selection.
-- [ ] Implement RS256/JWKS assertion verification and identity-token validation.
-- [ ] Strip Access credentials before container forwarding.
-- [ ] Add deterministic RSA/JWK unit tests and include them in `npm test`.
-- [ ] Disable private Worker `workers.dev` and preview URL alternate origins.
-- [ ] Declare required team-domain and per-surface audience bindings.
-- [ ] Regenerate Sessions Worker environment types.
-- [ ] Enforce verification before HTTP/WebSocket proxy dispatch.
-- [ ] Add durable Access setup, test, revocation, and rollback runbook.
-- [ ] Update lifecycle documentation to reference the implemented boundary.
-- [ ] Run focused, full, type, config, bundle, stable-app, and whitespace checks.
-- [ ] Perform adversarial auth/security self-review.
-- [ ] Complete this progress log and `review.md`.
+- [x] Add pinned `jose` runtime dependency without unrelated upgrades.
+- [x] Implement Access configuration parsing and per-surface audience selection.
+- [x] Implement RS256/JWKS assertion verification and identity-token validation.
+- [x] Strip Access credentials before container forwarding.
+- [x] Add deterministic RSA/JWK unit tests and include them in `npm test`.
+- [x] Disable private Worker `workers.dev` and preview URL alternate origins.
+- [x] Declare required team-domain and per-surface audience bindings.
+- [x] Regenerate Sessions Worker environment types.
+- [x] Enforce verification before HTTP/WebSocket proxy dispatch.
+- [x] Add durable Access setup, test, revocation, and rollback runbook.
+- [x] Update lifecycle documentation to reference the implemented boundary.
+- [x] Run focused, full, type, config, bundle, stable-app, and whitespace checks.
+- [x] Perform adversarial auth/security self-review.
+- [x] Complete this progress log and `review.md`.
 
 ## Starting workspace conditions
 
@@ -82,3 +82,50 @@
     preserving both tickets' code in the shared worktree;
   - `6876192` — alternate-origin closure and generated Access bindings.
   - `fac40c5` — interactive identity Access token support for owner CLI plus tests.
+  - `06a7efc` — Access operator runbook, lifecycle integration, and implementation log.
+
+## Final verification
+
+- `node --experimental-strip-types --test test/session-lifecycle.test.mjs test/session-access.test.mjs`
+  - pass, 38/38 focused tests.
+- `npm test`
+  - pass, 148/148 repository tests, zero failures/skips.
+- `npm run session:types:check`
+  - pass; generated Access bindings are current.
+- `npx tsc --noEmit --project tsconfig.sessions.json`
+  - pass.
+- `npm run session:validate`
+  - pass; types, isolated TypeScript, Worker bundle, and Docker image dry build.
+  - bundle: 677.41 KiB / 147.32 KiB gzip.
+- `npm run typecheck`
+  - pass; Astro reports 52 files, zero errors/warnings/hints.
+  - stable App Worker generated types are current.
+- `git diff --check`
+  - pass.
+
+## Adversarial self-review
+
+- Exact host classification happens before audience selection; unknown hosts never proxy.
+- Missing/blank/oversized/malformed assertions fail before coordinator lifecycle inspection.
+- `jose` restricts the algorithm to RS256 and checks exact issuer/audience plus registered
+  time claims; application type/email/subject are checked after signature verification.
+- Preview and editor audience bindings must differ and cross-surface tokens fail tests.
+- The handler uses the same authenticated branch for ordinary HTTP and WebSocket upgrades.
+- Assertion, Access email header, and only the Access cookie are removed before the DO/container.
+- Logs and public errors contain fixed categories, not token or identity values.
+- Interactive CLI token is bounded, sent only as a header, and included in exact-value output
+  redaction.
+- Private `workers.dev` and preview URLs are disabled; public Worker config is untouched.
+- No request identity enters global mutable state or Durable Object storage.
+- All async verification/coordinator calls are awaited.
+- No Bypass or Service Auth path is introduced.
+- Account-specific Access values remain uncommitted.
+
+## Remaining evidence (not an implementation failure)
+
+- No Cloudflare account/IdP authority or audience tags were supplied, and prior work records
+  missing paid Containers entitlement.
+- Therefore real Access applications/policies, clean-browser login, remote origin JWKS fetch,
+  cross-policy behavior, per-user revocation, editor WebSocket, and public/private HTTP probes
+  remain production go-live evidence.
+- The runbook makes these gates explicit and never recommends a bypass.
