@@ -32,23 +32,30 @@ envelope:
   "count": 2,
   "entries": [
     {
+      "id": 1,
       "type": "reference",
       "url": "https://example.com/x?q=a%20b&t=caf%C3%A9",
       "text": "line1\nline2 \"q\" café 😀 end",
-      "submittedAt": "2026-07-10T18:19:05.039Z"
+      "submittedAt": "2026-07-10T18:19:05.039Z",
+      "completedAt": null
     },
     {
+      "id": 2,
       "type": "feedback",
       "url": "https://example.com/y",
       "text": "the flow felt smooth",
-      "submittedAt": "2026-07-10T18:19:05.062Z"
+      "submittedAt": "2026-07-10T18:19:05.062Z",
+      "completedAt": "2026-07-10T19:04:11.000Z"
     }
   ]
 }
 ```
 
-Each entry has exactly four fields — `type` (`reference` | `feedback`), `url`, `text`,
-`submittedAt` (ISO-8601) — returned **verbatim**. The storage-private `id` is never exposed.
+Each entry has exactly six public fields. `id` is the stable numeric handle assigned by the store;
+`type` (`reference` | `feedback`), `url`, `text`, and `submittedAt` (ISO-8601) are the original
+submitted values; `completedAt` is `null` while incomplete and the completion timestamp when
+complete. Every value is returned **verbatim** from the canonical store mapping. Completing an
+entry changes only `completedAt` on the next read, and a hard-deleted entry is absent.
 
 **Why oldest-first:** an agent polling on a one-to-two-minute refresh cycle sees new entries
 append at the *end*, so existing indices never shift and a stable prefix can be diffed cheaply.
@@ -105,7 +112,8 @@ gate fail closed (`500`).
 
 - **Byte-for-byte.** `text` and `url` come back exactly as submitted — newlines, Unicode,
   quotes, and percent-encoded query strings are preserved unchanged.
-- **No `id` leak.** Only the four public contract fields ever leave the seam.
+- **Current management state.** Stable `id` and nullable `completedAt` match the store exactly;
+  completion changes and hard deletes are reflected on the next read.
 - **No secret in the browser.** `DEMO_PASSCODE` is read server-side only and is not
   `PUBLIC_`-prefixed, so it is never inlined into client output (charter P3).
 - **Sovereign.** The binding stays name-only; no account ID, database UUID, or token lives in
@@ -125,7 +133,9 @@ gate fail closed (`500`).
 ## Verifying the loop
 
 `test/backstage-retrieval.test.mjs` (in `npm test`) is the executable proof: it writes entries
-through the persistence module into a real SQLite store built from the committed migration,
-reads them back through this seam, and asserts the retrieved payload equals what was submitted
-byte-for-byte — plus the gate denials and the account-free property. The full write→read loop
-also runs over real HTTP against local D1 (`POST /api/backstage/entries` then this endpoint).
+through the persistence module into a real SQLite store built from both committed migrations,
+completes one, deletes another, and asserts the retrieved payload deeply equals the store's current
+oldest-first list. A store trap proves every gate denial occurs before any read. The same test runs
+the actual `npm run backstage:feed` command against a local HTTP feed and proves the six-field
+entries are printed unchanged. The full write→read loop also runs over real HTTP against local D1
+(`POST /api/backstage/entries` then this endpoint).
