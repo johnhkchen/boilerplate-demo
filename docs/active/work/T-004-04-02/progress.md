@@ -33,8 +33,8 @@ Only explicit ticket files will be staged for commits.
 - [x] Implement coordinator patch export/digest acknowledgement.
 - [x] Implement CLI patch persistence and explicit force path.
 - [x] Regenerate Sessions Worker bindings.
-- [ ] Prove patch recovery with a local Git fixture.
-- [ ] Update durable lifecycle documentation.
+- [x] Prove patch recovery with a local Git fixture.
+- [x] Update durable lifecycle documentation.
 - [ ] Run full validation.
 - [ ] Complete `review.md`.
 
@@ -49,7 +49,7 @@ Only explicit ticket files will be staged for commits.
 | `npm run session:validate` | pass; types current, TypeScript clean, Worker/image dry run succeeds |
 | `npm run typecheck` | pending |
 | `npm run deploy:dry` | pending |
-| Git patch recovery fixture | pending |
+| Git patch recovery fixture | 1/1 pass; tracked/untracked/deleted/binary/mode changes recover to identical Git tree |
 | `git diff --check` | pending |
 
 ## Deviations
@@ -60,4 +60,5 @@ None at implementation start.
 
 - `1034245` — RDSPI blueprint artifacts.
 - `6506457` — pure secret and teardown contracts.
-- Pending: launch injection, redaction, and verified teardown implementation.
+- `7dcafd8` — launch injection, redaction, and verified teardown implementation.
+- Pending: recovery fixture and durable operations documentation.

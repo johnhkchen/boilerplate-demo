@@ -1,6 +1,6 @@
 # One collaborative session lifecycle
 
-**Ticket:** `T-004-03-02`
+**Tickets:** `T-004-03-02`, `T-004-04-02`
 
 **Validated locally:** 2026-07-10 (America/Los_Angeles) / 2026-07-11 UTC
 
@@ -62,6 +62,26 @@ metadata; it does not cache mutable process truth as authoritative state.
 The repository URL must be credential-free HTTPS. Private-repository clone credentials are
 not part of this ticket. Do not add a token to the URL or Wrangler vars.
 
+`SESSION_RUNTIME_SECRETS` is a required Worker secret binding whose value is a JSON object from
+portable uppercase environment-variable name to secret string. Configure it through Wrangler's
+non-echoing secret input, never as a committed `vars` value:
+
+```bash
+npx wrangler secret put SESSION_RUNTIME_SECRETS --config wrangler.sessions.jsonc
+```
+
+Enter `{}` when the demo needs no runtime credentials. A populated value has this shape (use
+real values only in the secret prompt):
+
+```json
+{"DEMO_API_TOKEN":"<secret-at-least-eight-bytes>"}
+```
+
+The map accepts at most 32 entries and 16 KiB aggregate name/value data. Names must match
+`[A-Z_][A-Z0-9_]*`; process-loader variables, core shell variables, and the Worker's own
+`SESSION_*` configuration names are rejected. Values must be strings between 8 bytes and 4 KiB.
+Malformed configuration produces a fixed error that does not echo the source.
+
 Generated binding types are owned by:
 
 ```bash
@@ -101,10 +121,16 @@ Read bounded Astro and code-server output:
 npm run session -- logs
 ```
 
-Destroy the runtime:
+Safely destroy the runtime, exporting dirty work first:
 
 ```bash
 npm run session -- down
+```
+
+Explicitly discard dirty work only when preservation is intentionally unwanted:
+
+```bash
+npm run session -- down --force
 ```
 
 The CLI accepts only an HTTP(S) origin without credentials, path, query, or fragment. It prints
@@ -119,11 +145,16 @@ The CLI is a thin client over:
 | POST | `/__session/up` | `{ "revision": "<full SHA>" }` |
 | GET | `/__session/status` | none |
 | GET | `/__session/logs` | none |
-| POST | `/__session/down` | none |
+| POST | `/__session/down` | `{ "mode": "preserve" }` |
+| POST | `/__session/down` | `{ "mode": "destroy", "preservationSha256": "<digest>" }` |
+| POST | `/__session/down` | `{ "mode": "destroy", "force": true }` |
 
 The `up` body is streamed with a 4 KiB maximum, including requests with no Content-Length.
 Malformed JSON is 400, an oversized body is 413, an invalid/mutable revision is 400, and a
 different desired commit while a session exists is 409.
+
+The down body is also required and stream-bounded. Empty or ambiguous requests are rejected;
+there is no compatibility path to unconditional destruction.
 
 The control prefix is reserved by the Sessions Worker and is not proxied to Astro or
 code-server.
@@ -208,6 +239,14 @@ to `--root`. The final command therefore uses:
 
 code-server binds `0.0.0.0:8080`, disables telemetry, and opens the exact worktree.
 
+The parsed runtime-secret map is passed to both managed services through Sandbox
+`startProcess.env`. It is not interpolated into either command, supplied to the Git provisioning
+command, written to the worktree/runtime directory, or stored in coordinator state. code-server
+and its child terminals inherit the environment, so an authorized collaborator can intentionally
+read these values. This is a launch/persistence boundary for trusted or semi-trusted teammates,
+not isolation from code running inside the session. Do not inject the owner's agent credentials
+by default.
+
 ## Idempotency
 
 Repeated `up` with the same revision:
@@ -221,8 +260,9 @@ Repeated `up` with the same revision:
 
 The local proof retained Astro PID 155 and code-server PID 260 across the second `up`.
 
-Repeated `down` is also idempotent: the first call destroys and clears state with
-`changed: true`; the second returns idle with `changed: false`.
+Repeated safe `down` is also idempotent: a clean first call destroys and clears state with
+`changed: true`; the second returns idle with `changed: false`. A dirty first call performs the
+two-step export described below before destruction.
 
 ## Proxy contract
 
@@ -262,7 +302,11 @@ most recent 32 KiB and includes:
 - PID/exit code when present.
 
 An absent process yields an explicit `absent` entry. Complete logs are not stored in Durable
-Object metadata or copied into Workers structured logs.
+Object metadata or copied into Workers structured logs. Every known configured launch-secret
+value is replaced with `[REDACTED]` before byte bounding or API serialization. Error paths apply
+the same longest-value-first replacement before single-line conversion, truncation, durable
+failure storage, structured logging, or CLI output. Exact-value redaction cannot recognize a
+credential that was not part of the configured launch-secret map.
 
 ## Keepalive, cost, and teardown
 
@@ -270,9 +314,43 @@ The active one-session Sandbox uses `keepAlive: true`. The sleep/wake spike prov
 sleep destroys processes and `/workspace` state; keeping it alive avoids silently losing
 uncommitted collaborator work during the MVP session.
 
-This means the operator must run `down`. The command calls `sandbox.destroy()` and deletes
-desired state only after destroy succeeds. A failed destroy leaves a `failed` record for
-diagnosis.
+This means the operator must run `down`. A failed preservation or destroy leaves the runtime and
+desired record available for diagnosis/retry.
+
+Normal down inspects the exact detached worktree. It stages all non-ignored changes with
+`git add -A` and generates a `git diff --cached --binary --full-index HEAD` patch outside the
+worktree. This represents modified/deleted/renamed tracked files, executable-mode changes,
+untracked files, and binary content. Git-ignored files and empty directories are not represented.
+
+If the worktree is clean, the Worker destroys it immediately. If it is dirty:
+
+1. the Worker measures the complete patch and refuses patches over 2 MiB without truncating;
+2. the Worker computes SHA-256 and returns base64 patch bytes with the base revision;
+3. the CLI decodes and independently verifies byte count and SHA-256;
+4. the CLI creates a mode-`0600` patch in its current directory using exclusive creation;
+5. the CLI acknowledges the digest only after the local write succeeds;
+6. the Worker regenerates the patch and destroys only when the new digest matches.
+
+An edit between export and acknowledgement returns `409 workspace_changed`; the first recovery
+artifact remains local and the live session remains intact. Rerun down to export the newer state.
+A local name collision or disk error likewise stops before the destroy request.
+
+Artifacts use this form:
+
+```text
+demo-runway-session-<12-char-base>-<12-char-digest>.patch
+```
+
+Recover against the recorded base revision in a repository with the same history:
+
+```bash
+git checkout --detach <base-revision>
+git apply --binary <artifact.patch>
+```
+
+`down --force` is the only preservation bypass. It sends an explicit API boolean and returns a
+`forced:true` audit marker. It is non-interactive so automation can use it, but the flag is the
+destructive confirmation; never add an implicit environment toggle.
 
 Local teardown destroyed the Sandbox, stopped Wrangler, and manually stopped Wrangler's
 residual `proxy-everything` helper container. No session container or helper remained running.
@@ -287,22 +365,21 @@ before this Worker is deployed for collaboration. The control API must also be p
 has no shared bypass token by design.
 
 No token, password, Cloudflare credential, Git credential, `.dev.vars`, or agent credential is
-baked into the image, stored in the coordinator, returned by the API, or placed in docs.
+baked into the image or stored in the coordinator/worktree. Configured secret values are passed
+only to process launch and are redacted from owned logs/API/CLI output. Patch content is
+transported with `cache-control: no-store` but is never printed, logged, or durably stored by the
+Worker.
 
 ## Durability gate
 
-The active keepalive choice reduces sleep loss but does not make uncommitted work durable
-against platform replacement or explicit `down`.
+Safe explicit down now preserves uncommitted work through the verified owner-held patch. The
+active keepalive choice still does not protect against platform replacement before down, owner
+disconnect after export but before acknowledgement, or an operator choosing `--force`.
 
-The later safety ticket must commit/push or back up/restore a recoverable patch before allowing
-teardown or automatic sleep. Until then:
-
-- `down` destroys uncommitted session work;
-- platform replacement can lose the worktree;
-- a desired record can survive while runtime files do not;
-- same-revision `up` restores the commit and services, not lost edits.
-
-Use this only with trusted/semi-trusted teammates and treat uncommitted work as ephemeral.
+A desired record can survive while runtime files do not, and same-revision `up` restores only the
+commit/services when the container was replaced. R2 backup/restore or authenticated commit/push
+remains necessary before automatic sleep, replacement recovery, or multi-session garbage
+collection can be considered durable. Use the MVP only with trusted/semi-trusted teammates.
 
 ## Validation
 
@@ -318,6 +395,7 @@ Local runtime validation requires Docker:
 
 ```bash
 npx wrangler dev --config wrangler.sessions.jsonc
+export SESSION_RUNTIME_SECRETS='{}'
 SESSION_WORKER_URL=http://127.0.0.1:8787 npm run session -- up <sha>
 SESSION_WORKER_URL=http://127.0.0.1:8787 npm run session -- status
 SESSION_WORKER_URL=http://127.0.0.1:8787 npm run session -- logs
@@ -339,9 +417,11 @@ Before claiming the epic's production handoff:
 7. save an edit in code-server;
 8. observe the already-open preview update over `wss`;
 9. verify code-server's own WebSocket remains connected;
-10. implement and test uncommitted-work preservation;
-11. measure remote image placement, cold readiness, and `basic` instance behavior;
-12. run `down` and verify no retained runtime cost.
+10. configure the launch-secret binding through non-echoing Wrangler input;
+11. exercise secret injection/redaction with a disposable marker credential;
+12. edit tracked, untracked, and binary files and verify safe down produces an applicable patch;
+13. measure remote image placement, cold readiness, and `basic` instance behavior;
+14. run safe `down` and verify no retained runtime cost.
 
 The local result proves the implementation path and exact pinned image. It does not substitute
 for paid-platform TLS, Access, code-server browser, or remote replacement evidence.
