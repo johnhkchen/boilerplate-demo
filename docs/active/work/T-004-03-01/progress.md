@@ -2,7 +2,8 @@
 
 ## Status
 
-Implementation and full repository verification are complete; Review remains.
+All RDSPI phases are complete. Implementation, evidence, verification, and Review are ready for
+handoff to Lisa.
 
 The Research, Design, Structure, and Plan artifacts are complete and committed. The ticket
 frontmatter has not been edited.
@@ -14,7 +15,10 @@ frontmatter has not been edited.
 3. Structure — `73eb782` (`docs(session): structure container image`)
 4. Plan — `70ff447` (`docs(session): plan container image implementation`)
 5. Implementation — `87685a0` (`feat(session): build and verify pinned Sandbox image`)
-6. Type-boundary fix — `8dbd25a` (`fix(session): isolate Worker type projects`)
+6. Evidence — `93b5865` (`docs(session): record image cold-start evidence`)
+7. Type-boundary fix — `8dbd25a` (`fix(session): isolate Worker type projects`)
+8. Final evidence refresh — `2fcd625` (`docs(session): refresh final image evidence`)
+9. Review — final ticket commit
 
 ## Implementation checklist
 
@@ -29,7 +33,7 @@ frontmatter has not been edited.
 - [x] Inspect entrypoint, versions, ports, baked deps/source, and sensitive-path absence.
 - [x] Write machine evidence and durable image documentation.
 - [x] Run full repository verification.
-- [ ] Write Review.
+- [x] Write Review.
 
 ## Baseline observations
 
@@ -191,5 +195,4 @@ the cold check all passed. The refreshed final cold measurement is 4,485 ms.
 
 ## Remaining work
 
-1. Commit evidence, durable knowledge, and completed Progress.
-2. Complete and commit Review.
+None. Lisa owns ticket phase/status transitions.
