@@ -14,6 +14,7 @@ frontmatter has not been edited.
 3. Structure — `73eb782` (`docs(session): structure container image`)
 4. Plan — `70ff447` (`docs(session): plan container image implementation`)
 5. Implementation — `87685a0` (`feat(session): build and verify pinned Sandbox image`)
+6. Type-boundary fix — `8dbd25a` (`fix(session): isolate Worker type projects`)
 
 ## Implementation checklist
 
@@ -72,6 +73,17 @@ The Dockerfile now removes the old npm module directory and npm/npx links before
 official Node runtime. After that change, `npm ci` installed 303 packages, audited 304 packages,
 and found zero vulnerabilities. The final real Astro server started successfully.
 
+### Separate TypeScript projects
+
+Self-review found that placing both generated binding declarations in the root TypeScript
+project would merge their global `Cloudflare.Env` interfaces. That could make stable App code
+appear to have a Sandbox binding even though its Wrangler config does not.
+
+`tsconfig.json` now excludes the Sessions Worker and its generated declaration while preserving
+Astro's inherited `dist` exclusion. `tsconfig.sessions.json` independently checks only the
+Sessions Worker and its declaration. `session:validate` uses that project. Both projects pass,
+and the image copies both configs for the real repository baseline.
+
 ## Implemented files
 
 - `wrangler.sessions.jsonc` — separate Sessions Worker; `basic` container, Sandbox DO binding,
@@ -105,10 +117,11 @@ The `v1` `new_sqlite_classes: ["Sandbox"]` migration is present in the validated
 
 ## Cold readiness evidence
 
-The authoritative build+check run completed at `2026-07-11T00:14:41.685Z`:
+The final build+check run completed at `2026-07-11T00:20:54.809Z` after separating the App and
+Sessions Worker TypeScript projects:
 
 - budget: 60,000 ms;
-- clean-container start to valid HTTP response: 4,430 ms;
+- clean-container start to valid HTTP response: 4,485 ms;
 - result: within budget;
 - response: HTTP 200 containing `Demo Runway`;
 - image: `demo-runway-session:local`, linux/amd64;
@@ -171,6 +184,10 @@ The stable App Worker dry run still reports only:
 - `DEMO_FAULT` variable.
 
 It reports no Sandbox Durable Object or container. The two-Worker boundary is intact.
+
+After the self-review type-project fix, the affected gates were rerun: session validation,
+root typecheck (46 files, zero diagnostics), the 9 image-check tests, a fresh image build, and
+the cold check all passed. The refreshed final cold measurement is 4,485 ms.
 
 ## Remaining work
 

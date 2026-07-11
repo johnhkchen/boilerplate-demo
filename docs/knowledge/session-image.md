@@ -2,7 +2,7 @@
 
 **Ticket:** `T-004-03-01`  
 **Validated:** 2026-07-10 (America/Los_Angeles) / 2026-07-11 UTC  
-**Local cold readiness:** **4,430 ms against a 60,000 ms budget**  
+**Local cold readiness:** **4,485 ms against a 60,000 ms budget**
 **Production cold readiness:** **not yet observed — Containers entitlement required**
 
 This is the durable build and readiness contract for the one-session Sandbox image. It
@@ -178,6 +178,11 @@ The Worker module re-exports `Sandbox`. Generated `worker-configuration.sessions
 only that binding. An explicit empty session-secret declaration stops Wrangler from inferring
 the stable App Worker's local `.dev.vars` keys into the separate Worker.
 
+The generated declarations live in separate TypeScript projects. Root `tsconfig.json` excludes
+the Sessions Worker declaration so its global `Cloudflare.Env` augmentation cannot merge into
+the stable App type surface. `tsconfig.sessions.json` checks the Sessions Worker and its binding
+declaration independently; `npm run session:validate` uses that project.
+
 `basic` supplies 1/4 vCPU, 1 GiB memory, and 4 GB disk. It is selected over `lite` because the
 session co-locates Sandbox transport, workerd/Astro/Vite, and code-server; `lite` provides only
 256 MiB. Production sizing remains unproven until an entitled remote run.
@@ -202,12 +207,12 @@ placement because those require an entitled account.
 
 ## Latest evidence
 
-The authoritative local run at `2026-07-11T00:14:41.685Z` recorded:
+The authoritative local run at `2026-07-11T00:20:54.809Z` recorded:
 
 | Observation | Result |
 |---|---|
 | Budget | 60,000 ms |
-| Clean start to valid HTTP | **4,430 ms** |
+| Clean start to valid HTTP | **4,485 ms** |
 | Within budget | yes |
 | HTTP / marker | 200 / `Demo Runway` found |
 | Sandbox / Node / npm | 0.12.3 / v24.18.0 / 11.16.0 |

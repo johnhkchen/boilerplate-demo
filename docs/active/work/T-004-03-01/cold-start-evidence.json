@@ -1,13 +1,13 @@
 {
   "ticket": "T-004-03-01",
-  "observedAt": "2026-07-11T00:14:41.685Z",
+  "observedAt": "2026-07-11T00:20:54.809Z",
   "scope": "local-docker",
   "budgetMs": 60000,
-  "elapsedMs": 4430,
+  "elapsedMs": 4485,
   "withinBudget": true,
   "image": {
     "tag": "demo-runway-session:local",
-    "id": "sha256:73ca1d26a3cef18310f36ec62b8c3eff28b7ddf3a7d422edf426c8e24659d4be",
+    "id": "sha256:eb3389e61c1037a7ff6b631ffbf02c9775d729f19d3c6c2234f4dad130a5b0c9",
     "architecture": "amd64",
     "sizeBytes": 581788253,
     "sandboxBase": "docker.io/cloudflare/sandbox:0.12.3",
