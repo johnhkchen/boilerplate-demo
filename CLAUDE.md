@@ -32,4 +32,6 @@ the loop default.
 
 ---
 
-The RDSPI workflow definition is in docs/knowledge/rdspi-workflow.md and is injected into agent context by lisa automatically.
+The [RDSPI workflow](docs/knowledge/rdspi-workflow.md) is injected into agent context by Lisa
+automatically. Before adding or changing user-facing copy, read and apply the
+[copy voice and length standard](docs/knowledge/copy-voice-standard.md).

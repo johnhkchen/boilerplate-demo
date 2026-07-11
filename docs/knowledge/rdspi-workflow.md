@@ -2,6 +2,21 @@
 
 Every ticket passes through six phases in order. No phases are skipped regardless of ticket size. Complete all phases in a single continuous pass — do not stop between phases.
 
+### Authoring knowledge
+
+Before adding or changing user-facing copy, read and apply the
+[copy voice and length standard](copy-voice-standard.md). Its authoring envelope is:
+
+1. use plain kitchen-table English;
+2. keep each element brief and within its applicable length envelope;
+3. use names as wayfinding;
+4. begin action labels with a specific verb.
+
+The standard remains canonical for copy scope and classification, word and character ceilings,
+counting, adjacent explanations, exceptions, and the author-and-review pass. When this rule
+applies, cite the standard in Research and map every affected user-facing copy surface before
+Design.
+
 ### Research
 
 Map the codebase. Produce `research.md` (~200 lines).
