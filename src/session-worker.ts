@@ -2,6 +2,11 @@ import { getSandbox, type Process } from '@cloudflare/sandbox';
 import { DurableObject } from 'cloudflare:workers';
 
 import {
+  parseAccessConfig,
+  stripAccessCredentials,
+  verifyAccessRequest,
+} from './lib/session-access';
+import {
   ASTRO_PORT,
   ASTRO_PROCESS_ID,
   CODE_SERVER_PORT,
@@ -35,7 +40,6 @@ import {
   parseUpInput,
   readBoundedJson,
   redactSecrets,
-  safeErrorMessage,
   safePublicError,
   sessionUrls,
   success,
@@ -391,7 +395,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
     });
   }
 
-  async status(): Promise<SessionOperationResult<StatusPayload>> {
+  async status(runtimeSecrets: RuntimeSecrets): Promise<SessionOperationResult<StatusPayload>> {
     const record = await this.record();
     if (record === undefined) {
       return success({
@@ -417,7 +421,7 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
         placementId: observedPlacement ?? null,
       });
     } catch (error: unknown) {
-      return failure(503, 'status_unavailable', safeErrorMessage(error));
+      return failure(503, 'status_unavailable', safePublicError(error, runtimeSecrets));
     }
   }
 
@@ -528,6 +532,25 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
     }
   }
 
+  private async quiesceManagedProcesses(runtimeSecrets: RuntimeSecrets): Promise<void> {
+    const sandbox = this.sandbox();
+    const processes = await sandbox.listProcesses();
+    for (const process of processes) {
+      if (process.id !== ASTRO_PROCESS_ID && process.id !== CODE_SERVER_PROCESS_ID) continue;
+      if ((await process.getStatus()) !== 'running') continue;
+      try {
+        await process.kill();
+      } catch (error: unknown) {
+        throw new SessionRuntimeError(
+          'session_quiesce_failed',
+          502,
+          safePublicError(error, runtimeSecrets),
+        );
+      }
+    }
+    await sandbox.cleanupCompletedProcesses();
+  }
+
   down(
     input: SessionDownInput,
     runtimeSecrets: RuntimeSecrets,
@@ -546,7 +569,32 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
       const forced = input.mode === 'destroy' && 'force' in input;
       let preservationSha256: string | undefined;
       if (!forced) {
-        const preservation = await this.inspectPreservation(record, runtimeSecrets);
+        let preservation = await this.inspectPreservation(record, runtimeSecrets);
+        if (!preservation.ok) return preservation;
+        if (input.mode === 'preserve' && preservation.value.patch !== null) {
+          return success({
+            ok: true,
+            operation: 'down',
+            changed: false,
+            phase: record.phase,
+            preservation: preservation.value.patch,
+          });
+        }
+
+        try {
+          await this.quiesceManagedProcesses(runtimeSecrets);
+        } catch (error: unknown) {
+          const runtimeError =
+            error instanceof SessionRuntimeError
+              ? error
+              : new SessionRuntimeError(
+                  'session_quiesce_failed',
+                  502,
+                  safePublicError(error, runtimeSecrets),
+                );
+          return failure(runtimeError.status, runtimeError.code, runtimeError.message);
+        }
+        preservation = await this.inspectPreservation(record, runtimeSecrets);
         if (!preservation.ok) return preservation;
         if (input.mode === 'preserve' && preservation.value.patch !== null) {
           return success({
@@ -566,6 +614,12 @@ export class SessionCoordinator extends DurableObject<SessionWorkerEnv> {
             );
           }
           if (preservation.value.patch.sha256 !== input.preservationSha256) {
+            await this.storeRecord({
+              ...record,
+              phase: 'failed',
+              updatedAt: new Date().toISOString(),
+              error: 'workspace changed after export; session services were stopped',
+            });
             return failure(
               409,
               'workspace_changed',
@@ -717,7 +771,7 @@ async function handleControl(
     if (!parsed.ok) return operationResponse(parsed);
     return operationResponse(await coordinator.up(parsed.value, runtimeSecrets));
   }
-  if (operation === 'status') return operationResponse(await coordinator.status());
+  if (operation === 'status') return operationResponse(await coordinator.status(runtimeSecrets));
   if (operation === 'logs') return operationResponse(await coordinator.logs(runtimeSecrets));
   const body = await readBoundedJson(request);
   if (!body.ok) return operationResponse(body);
@@ -781,9 +835,42 @@ const handler = {
 
     const proxyTarget: ProxyTarget | null = classifyProxyHost(url.hostname, config);
     if (proxyTarget !== null) {
-      const headers = new Headers(request.headers);
+      let accessConfig;
+      try {
+        accessConfig = parseAccessConfig(env);
+      } catch {
+        return invalidConfiguration();
+      }
+      const verification = await verifyAccessRequest(
+        request,
+        accessConfig,
+        proxyTarget,
+      );
+      if (!verification.ok) {
+        console.warn(
+          JSON.stringify({
+            component: 'session-worker',
+            operation: 'access-verification',
+            surface: proxyTarget,
+            result: verification.reason,
+          }),
+        );
+        return jsonResponse(
+          {
+            ok: false,
+            error: {
+              code: 'access_denied',
+              message: 'a valid identity login is required',
+            },
+          },
+          { status: 403 },
+        );
+      }
+
+      const sanitized = stripAccessCredentials(request);
+      const headers = new Headers(sanitized.headers);
       headers.set(SESSION_PROXY_TARGET_HEADER, proxyTarget);
-      return coordinator.fetch(new Request(request, { headers }));
+      return coordinator.fetch(new Request(sanitized, { headers }));
     }
 
     if (request.method === 'GET' && url.pathname === '/') {

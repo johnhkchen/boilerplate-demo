@@ -329,10 +329,12 @@ If the worktree is clean, the Worker destroys it immediately. If it is dirty:
 3. the CLI decodes and independently verifies byte count and SHA-256;
 4. the CLI creates a mode-`0600` patch in its current directory using exclusive creation;
 5. the CLI acknowledges the digest only after the local write succeeds;
-6. the Worker regenerates the patch and destroys only when the new digest matches.
+6. the Worker stops the managed editor/dev processes, regenerates the patch, and destroys only
+   when the new digest matches.
 
-An edit between export and acknowledgement returns `409 workspace_changed`; the first recovery
-artifact remains local and the live session remains intact. Rerun down to export the newer state.
+A save before final process quiescence that changes the digest returns `409 workspace_changed`;
+the first recovery artifact and container remain intact, with managed services stopped. Rerun
+down to export the newer state (or `up` first if editing must resume).
 A local name collision or disk error likewise stops before the destroy request.
 
 Artifacts use this form:
@@ -394,8 +396,8 @@ npm run typecheck
 Local runtime validation requires Docker:
 
 ```bash
-npx wrangler dev --config wrangler.sessions.jsonc
 export SESSION_RUNTIME_SECRETS='{}'
+npx wrangler dev --config wrangler.sessions.jsonc
 SESSION_WORKER_URL=http://127.0.0.1:8787 npm run session -- up <sha>
 SESSION_WORKER_URL=http://127.0.0.1:8787 npm run session -- status
 SESSION_WORKER_URL=http://127.0.0.1:8787 npm run session -- logs

@@ -54,11 +54,15 @@ Only explicit ticket files will be staged for commits.
 
 ## Deviations
 
-None at implementation start.
+- Final Cloudflare/DO safety review identified a save race between digest comparison and
+  destruction. The coordinator now stops the two managed services before its final patch
+  inspection. A mismatched digest retains the container and records a failed phase so stopped
+  service state is not reported as ready.
 
 ## Commit ledger
 
 - `1034245` — RDSPI blueprint artifacts.
 - `6506457` — pure secret and teardown contracts.
 - `7dcafd8` — launch injection, redaction, and verified teardown implementation.
-- Pending: recovery fixture and durable operations documentation.
+- `8219149` — recovery fixture and durable operations documentation.
+- Pending: final teardown-race hardening.
