@@ -1,0 +1,7 @@
+
+> demo-runway@0.0.1 leak:check
+> node --experimental-strip-types scripts/leak-check.ts
+
+✓ leak check — passed
+    client assets    23 checked
+    response bodies  1 checked

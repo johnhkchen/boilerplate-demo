@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "ticket": "T-007-02-04",
+  "mode": "served-local-new-owner-stand-in",
+  "boundary": "no second Cloudflare account on this machine; live deployed-URL run is deferred",
+  "verdict": "pass",
+  "checks": [
+    {
+      "check": "integration:check",
+      "outcome": "green",
+      "exitCode": 0,
+      "evidence": "1-integration.txt"
+    },
+    {
+      "check": "ops:check",
+      "outcome": "green",
+      "exitCode": 0,
+      "evidence": "2-ops.txt"
+    },
+    {
+      "check": "leak:check",
+      "outcome": "green",
+      "exitCode": 0,
+      "evidence": "3-leak.txt"
+    },
+    {
+      "check": "test:flow:backstage",
+      "outcome": "green",
+      "exitCode": 0,
+      "evidence": "4-flow-backstage.txt"
+    }
+  ]
+}

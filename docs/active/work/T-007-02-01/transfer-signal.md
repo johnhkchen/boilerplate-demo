@@ -36,7 +36,7 @@ move their owned rows to `pass` or `gap` as they attempt the real transfer.
 | 4 | **Data** | `BACKSTAGE_DB` rows (`src/lib/backstage-store.ts`); `SESSION_COORDINATOR` DO storage | New-owner store holds the moved rows / desired session state | rows/state absent under new account, or export/import step missing | **`gap`** (T-007-02-03): `SESSION_COORDINATOR` DO storage has **no export/import seam**; D1 half clean — rows exported/imported between local stores and served via `/api/backstage/feed`; remote import deferred | T-007-02-03 |
 | 5 | **Configuration** | `wrangler.sessions.jsonc:vars` (`SESSION_DOMAIN`, `SESSION_REPOSITORY_URL`) | Both committed author values replaced with new-owner values | either var still author zone/repo | `pass` (scrubbed to placeholders) → owner fills real values | T-007-02-02 |
 | 6 | **Secrets** | `wrangler.jsonc:secrets.required` + session `secrets.required`; `leak:check` / `ops:check`; `.dev.vars` absent | Every secret set to new-owner value; leak/ops green; zero author secret on path | any author secret reachable, or a secret proves non-rotatable (name it) | `pass` (clean tree carries **no** secret to inherit) → owner installs + rotation proven | T-007-02-02 |
-| 7 | **Checks** | `npm run integration:check`, `leak:check`, `ops:check`, `test:flow:backstage` against the new-owner URL | All green against the new deployment with author accounts removed from the path | any check red → record the failing check + seam | `deferred` — checks need a live new-owner deployment to run against | T-007-02-04 |
+| 7 | **Checks** | `npm run integration:check`, `leak:check`, `ops:check`, `test:flow:backstage` against the new-owner URL | All green against the new deployment with author accounts removed from the path | any check red → record the failing check + seam | **`pass`** (attempted — T-007-02-04): all four green against the **served-local** new-owner context under an `env -i` author-free environment (`../T-007-02-04/checks-run.md`); live deployed-URL re-run still `deferred` | T-007-02-04 |
 
 ## Per-category detail
 
@@ -122,3 +122,11 @@ environment artifact to run outside an agent session, not a demo gap).
 `deferred` with clean local legs, 3 Domain **`gap`** (`test/promote.test.mjs:246`
 domain literal), 4 Data **`gap`** (`SESSION_COORDINATOR` DO storage has no
 export seam; D1 half clean). Rows 5–7 remain with T-007-02-02 / T-007-02-04.
+
+**After the T-007-02-04 run (row 7 moved; see `../T-007-02-04/checks-run.md`):**
+7 Checks **`pass`** (attempted) — `integration:check` (operation/leak/flow-healthy),
+standalone `ops:check` + `leak:check`, and `test:flow:backstage` all green against the
+served-local new-owner context, author accounts and any fleet service off the path via
+`env -i`; the same checks against a real deployed new-owner URL stay `deferred-live`.
+The rows-3/4 gaps are upstream of row 7 (a unit-test domain literal and a DO-export
+seam) — not check failures; row 7's own checks found no gap.

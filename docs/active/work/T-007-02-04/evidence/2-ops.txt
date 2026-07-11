@@ -1,0 +1,8 @@
+
+> demo-runway@0.0.1 ops:check
+> node --experimental-strip-types scripts/ops-check.ts
+
+✓ receipt — passed in 29.2 ms
+    issued at   2026-07-11T07:39:49.087Z
+    one-time    b17e6526cee30a2b3d82adf4d465f28e
+    signature   verified against the out-of-band key

@@ -1,0 +1,14 @@
+
+> demo-runway@0.0.1 test:flow:backstage
+> playwright test --project=backstage
+
+[WebServer] Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+
+Running 1 test using 1 worker
+
+     1.1 [backstage] › tests/backstage-flow.spec.ts:14:1 › a stakeholder submits a reference from a phone and it lands in the store › open the backstage form (110ms)
+     1.2 [backstage] › tests/backstage-flow.spec.ts:14:1 › a stakeholder submits a reference from a phone and it lands in the store › submit a reference from a phone (82ms)
+     1.3 [backstage] › tests/backstage-flow.spec.ts:14:1 › a stakeholder submits a reference from a phone and it lands in the store › confirm it reached the store (21ms)
+  ✓  1 [backstage] › tests/backstage-flow.spec.ts:14:1 › a stakeholder submits a reference from a phone and it lands in the store (248ms)
+
+  1 passed (2.4s)

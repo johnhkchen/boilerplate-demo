@@ -1,0 +1,101 @@
+
+> demo-runway@0.0.1 integration:check
+> node --experimental-strip-types scripts/integration-check.ts
+
+
+── build ──
+
+> demo-runway@0.0.1 build
+> astro build
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+00:39:44 [types] Generated 19ms
+00:39:44 [build] output: "static"
+00:39:44 [build] mode: "server"
+00:39:44 [build] directory: /private/var/folders/kn/7f93dn8n1wb51m_jydvylncw0000gn/T/demo-runway-checks-context/dist/
+00:39:44 [build] adapter: @astrojs/cloudflare
+00:39:44 [build] Collecting build info...
+00:39:44 [build] ✓ Completed in 40ms.
+00:39:44 [build] Building server entrypoints...
+Using secrets defined in process.env
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mMissing required secrets: DEMO_SIGNING_KEY, DEMO_PASSCODE. Add them to .dev.vars, .env, or set as environment variables.[0m
+
+
+00:39:44 [vite] ✓ built in 71ms
+Using secrets defined in process.env
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mMissing required secrets: DEMO_SIGNING_KEY, DEMO_PASSCODE. Add them to .dev.vars, .env, or set as environment variables.[0m
+
+
+00:39:44 [vite] ✓ built in 42ms
+00:39:44 [vite] ✓ built in 6ms
+Using secrets defined in process.env
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mMissing required secrets: DEMO_SIGNING_KEY, DEMO_PASSCODE. Add them to .dev.vars, .env, or set as environment variables.[0m
+
+
+
+ prerendering static routes 
+00:39:44   ├─ /backstage/index.html (+7ms) 
+00:39:44   ├─ /index.html (+4ms) 
+00:39:44 ✓ Completed in 126ms.
+
+00:39:44 [build] Rearranging server assets...
+00:39:44 [build] ✓ Completed in 264ms.
+00:39:44 [@astrojs/cloudflare] Injected immutable Cache-Control for /_astro/* into _headers.
+00:39:44 [build] Server built in 306ms
+00:39:44 [build] Complete!
+
+── server ──
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4324
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+00:39:44 [vite] Re-optimizing dependencies because vite config has changed
+00:39:45 [vite] connected.
+00:39:45 [types] Generated 0ms
+00:39:45 [vite] Re-optimizing dependencies because vite config has changed
+ astro  v7.0.7 ready in 951 ms
+┃ Local    http://127.0.0.1:4324/
+00:39:45 watching for file changes...
+
+── operation ──
+
+> demo-runway@0.0.1 ops:check
+> node --experimental-strip-types scripts/ops-check.ts
+
+✓ receipt — passed in 30.7 ms
+    issued at   2026-07-11T07:39:45.775Z
+    one-time    bd8c4a66b821474ada9299ffe1a8f547
+    signature   verified against the out-of-band key
+
+── flow ──
+
+> demo-runway@0.0.1 test:flow
+> playwright test --project=healthy
+
+
+Running 2 tests using 1 worker
+
+     1.1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › load the public demo (42ms)
+     1.2 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › await receipt boundary response (124ms)
+     1.3 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt › activate the labeled primary action (50ms)
+  ✓  1 [healthy] › tests/demo-flow.spec.ts:19:1 › main demo flow renders the signed receipt (253ms)
+  -  2 [healthy] › tests/demo-flow.spec.ts:82:1 › the stalled boundary stays narrated and the labeled action still answers
+
+  1 skipped
+  1 passed (517ms)
+
+── leak ──
+
+> demo-runway@0.0.1 leak:check
+> node --experimental-strip-types scripts/leak-check.ts
+
+✓ leak check — passed
+    client assets    23 checked
+    response bodies  1 checked
+
+Integration check: PASSED in 3.3s (budget 45.0s)
+✓ receipt — operation passed (145.9 ms)
+✓ receipt — flow passed (776.3 ms)
+✓ receipt — leak passed (135.7 ms)
+Report: test-results/integration-report.json

@@ -1,0 +1,10 @@
+
+> demo-runway@0.0.1 dev
+> astro dev --host 127.0.0.1 --port 4337
+
+Using deprecated `session.driver` string signature. Learn how to migrate: https://docs.astro.build/en/guides/upgrade-to/v6/#deprecated-session-driver-string-signature
+00:39:48 [vite] connected.
+00:39:48 [types] Generated 0ms
+ astro  v7.0.7 ready in 807 ms
+┃ Local    http://127.0.0.1:4337/
+00:39:48 watching for file changes...
