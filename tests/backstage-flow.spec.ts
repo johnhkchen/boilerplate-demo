@@ -7,98 +7,174 @@ import {
   FLOW_PROJECT,
 } from './support/flow-contract';
 
-// The acceptance, driven end to end on a phone viewport: a visitor enters the passcode,
-// submits a reference, and sees a confirmation — then we prove the submission reached the
-// store by reading it back through the documented retrieval seam (GET /api/backstage/feed),
-// exactly as a coding agent would. This closes E-003's submit→retrieve loop.
-test('a stakeholder submits a reference from a phone and it lands in the store', async ({
+// The whole account-free dashboard acceptance, driven on a phone viewport. A single successful
+// feed request unlocks the page; submit, completion, and deletion then reuse that page-memory
+// passcode without another credential prompt. Final feed assertions prove canonical store state.
+test('one passcode unlocks the backstage checklist and every entry action', async ({
   page,
   request,
 }, testInfo) => {
-  // Guard: this flow is the backstage project's alone (mobile device preset). If some other
-  // project ever matches it, skip rather than run at the wrong viewport.
   test.skip(
     testInfo.project.name !== FLOW_PROJECT.backstage,
     'backstage flow runs only on the mobile backstage project',
   );
 
-  // A per-run marker so the assertion targets THIS submission regardless of any entries the
-  // local store already holds from prior runs.
   const marker = `pw-backstage-${Date.now()}`;
-  const noteText = `Take a look at this reference — ${marker}`;
-  const linkUrl = `https://example.com/ref/${marker}`;
+  const seedText = `Already waiting for the team — ${marker}`;
+  const completeText = `Complete this from the checklist — ${marker}`;
+  const deleteText = `Delete this from the checklist — ${marker}`;
+  const completeUrl = `https://example.com/complete/${marker}`;
+
+  const apiHeaders = {
+    [PASSCODE_HEADER]: BACKSTAGE_PASSCODE,
+    'content-type': 'application/json',
+  };
+  const seed = await request.post('/api/backstage/entries', {
+    headers: apiHeaders,
+    data: { type: 'feedback', url: '', text: seedText },
+  });
+  expect(seed.status(), `seed response: ${await seed.text()}`).toBe(201);
 
   await test.step(
-    BACKSTAGE_STEP.openForm,
+    BACKSTAGE_STEP.openLocked,
     async () => {
       await page.goto('/backstage');
-      await expect(page.getByRole('heading', { name: 'Backstage' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Backstage', exact: true })).toBeVisible();
       await expect(page.getByLabel('Shared passcode')).toBeVisible();
-      await expect(
-        page.locator('#bs-confirm'),
-        'the confirmation must stay hidden before a successful submission',
-      ).toBeHidden();
-      await expect(page.locator('#bs-confirm-url-row')).toBeHidden();
+      await expect(page.locator('#backstage-dashboard')).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Add to the list' })).toBeHidden();
     },
     { box: true, timeout: FLOW_BUDGET_MS.action },
   );
 
   await test.step(
-    BACKSTAGE_STEP.submitReference,
+    BACKSTAGE_STEP.refuseWrong,
+    async () => {
+      await page.getByLabel('Shared passcode').fill('definitely-the-wrong-knock');
+      const denialPromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/backstage/feed' &&
+          response.request().method() === 'GET',
+      );
+      await page.getByRole('button', { name: 'Open backstage' }).click();
+      expect((await denialPromise).status()).toBe(403);
+      await expect(page.getByRole('alert')).toContainText("That passcode didn't work");
+      await expect(page.locator('#backstage-dashboard')).toBeHidden();
+    },
+    { box: true, timeout: FLOW_BUDGET_MS.action },
+  );
+
+  await test.step(
+    BACKSTAGE_STEP.unlockAndList,
     async () => {
       await page.getByLabel('Shared passcode').fill(BACKSTAGE_PASSCODE);
-      // The reference radio is checked by default; assert it, then fill link + note.
-      const reference = page.getByRole('radio', { name: 'A link or reference' });
-      await expect(reference).toBeChecked();
-      // Exact match: the "A link or reference" radio's accessible name also contains "link".
-      await page.getByLabel('Link', { exact: true }).fill(linkUrl);
-      await page.getByLabel('Say more').fill(noteText);
+      const feedPromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/backstage/feed' &&
+          response.request().method() === 'GET',
+      );
+      await page.getByRole('button', { name: 'Open backstage' }).click();
+      expect((await feedPromise).status()).toBe(200);
+      await expect(page.locator('#backstage-gate')).toBeHidden();
+      await expect(page.locator('#backstage-dashboard')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'The shared checklist' })).toBeFocused();
+      await expect(page.getByLabel('Shared passcode')).toHaveValue('');
+      await expect(page.getByRole('listitem').filter({ hasText: seedText })).toBeVisible();
+      await expect(page.locator('#backstage-dashboard input[type="password"]')).toHaveCount(0);
+    },
+    { box: true, timeout: FLOW_BUDGET_MS.action },
+  );
 
+  await test.step(
+    BACKSTAGE_STEP.submitWithoutSecondCredential,
+    async () => {
+      await page.getByLabel('Link', { exact: true }).fill(completeUrl);
+      await page.getByLabel('Say more').fill(completeText);
       const submissionPromise = page.waitForResponse(
         (response) =>
           new URL(response.url()).pathname === '/api/backstage/entries' &&
           response.request().method() === 'POST',
-        { timeout: FLOW_BUDGET_MS.action },
       );
-      await page.getByRole('button', { name: 'Send it over' }).click();
-      const submission = await submissionPromise;
-      const responseBody = await submission.text();
-      expect(
-        submission.status(),
-        `the submission endpoint should create the entry; response: ${responseBody}`,
-      ).toBe(201);
+      await page.getByRole('button', { name: 'Add to the list' }).click();
+      expect((await submissionPromise).status()).toBe(201);
+      const completeItem = page.getByRole('listitem').filter({ hasText: completeText });
+      await expect(completeItem).toBeVisible();
+      await expect(completeItem.getByRole('link')).toHaveAttribute('href', completeUrl);
+    },
+    { box: true, timeout: FLOW_BUDGET_MS.action },
+  );
 
-      // The form is swapped for the confirmation panel, which echoes what was sent.
-      await expect(
-        page.locator('#bs-confirm'),
-        'the confirmation panel should appear after a successful submit',
-      ).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Got it — thanks.' })).toBeVisible();
-      await expect(page.locator('#bs-confirm-text')).toHaveText(noteText);
-      await expect(page.locator('#bs-confirm-url')).toHaveText(linkUrl);
+  let completedId = 0;
+  await test.step(
+    BACKSTAGE_STEP.completeFromChecklist,
+    async () => {
+      const completeItem = page.getByRole('listitem').filter({ hasText: completeText });
+      completedId = Number(await completeItem.getAttribute('data-entry-id'));
+      expect(completedId).toBeGreaterThan(0);
+      const checkbox = completeItem.getByRole('checkbox');
+      await expect(checkbox).not.toBeChecked();
+      const completionPromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === `/api/backstage/entries/${completedId}` &&
+          response.request().method() === 'PATCH',
+      );
+      await checkbox.check();
+      expect((await completionPromise).status()).toBe(200);
+      const refreshedItem = page.getByRole('listitem').filter({ hasText: completeText });
+      await expect(refreshedItem.getByRole('checkbox')).toBeChecked();
+      await expect(refreshedItem.getByRole('checkbox')).toBeDisabled();
+      await expect(refreshedItem).toContainText('Complete');
+    },
+    { box: true, timeout: FLOW_BUDGET_MS.action },
+  );
+
+  let deletedId = 0;
+  await test.step(
+    BACKSTAGE_STEP.deleteFromChecklist,
+    async () => {
+      await page.getByRole('radio', { name: 'A bit of feedback' }).check();
+      await page.getByLabel('Say more').fill(deleteText);
+      const submissionPromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/backstage/entries' &&
+          response.request().method() === 'POST',
+      );
+      await page.getByRole('button', { name: 'Add to the list' }).click();
+      expect((await submissionPromise).status()).toBe(201);
+
+      const deleteItem = page.getByRole('listitem').filter({ hasText: deleteText });
+      await expect(deleteItem).toBeVisible();
+      deletedId = Number(await deleteItem.getAttribute('data-entry-id'));
+      expect(deletedId).toBeGreaterThan(0);
+      page.once('dialog', (dialog) => dialog.accept());
+      const deletionPromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === `/api/backstage/entries/${deletedId}` &&
+          response.request().method() === 'DELETE',
+      );
+      await deleteItem.getByRole('button', { name: `Delete entry ${deletedId}` }).click();
+      expect((await deletionPromise).status()).toBe(200);
+      await expect(page.getByRole('listitem').filter({ hasText: deleteText })).toHaveCount(0);
+      await expect(page.getByRole('listitem').filter({ hasText: completeText })).toBeVisible();
     },
     { box: true, timeout: FLOW_BUDGET_MS.action },
   );
 
   await test.step(
-    BACKSTAGE_STEP.confirmStored,
+    BACKSTAGE_STEP.confirmCanonical,
     async () => {
-      // Read the store back through the real documented seam, gated by the same passcode.
-      const res = await request.get('/api/backstage/feed', {
+      const response = await request.get('/api/backstage/feed', {
         headers: { [PASSCODE_HEADER]: BACKSTAGE_PASSCODE },
       });
-      expect(res.status(), 'the feed seam should accept the shared passcode').toBe(200);
-      const feed = await res.json();
-
-      const mine = (feed.entries as Array<Record<string, unknown>>).find(
-        (entry) => entry.text === noteText,
+      expect(response.status()).toBe(200);
+      const feed = (await response.json()) as { entries: Array<Record<string, unknown>> };
+      expect(feed.entries.some((entry) => entry.text === seedText)).toBe(true);
+      const completed = feed.entries.find((entry) => entry.text === completeText);
+      expect(completed?.id).toBe(completedId);
+      expect(typeof completed?.completedAt).toBe('string');
+      expect(feed.entries.some((entry) => entry.id === deletedId || entry.text === deleteText)).toBe(
+        false,
       );
-      expect(
-        mine,
-        'the submitted reference should be retrievable from the store via the feed seam',
-      ).toBeTruthy();
-      expect(mine?.type).toBe('reference');
-      expect(mine?.url).toBe(linkUrl);
     },
     { box: true, timeout: FLOW_BUDGET_MS.action },
   );

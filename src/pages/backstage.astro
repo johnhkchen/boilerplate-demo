@@ -1,19 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-// The stakeholder backstage door (E-003). A static-first page — like index.astro it is
-// prerendered to an asset and loads instantly; the only moving part is the inline browser
-// script below, which POSTs the entry to /api/backstage/entries with the shared passcode in
-// the x-demo-passcode header. The passcode is typed by the visitor at runtime and never lives
-// in this page's source or scripts, so nothing secret is inlined (charter P3). The page view is
-// not gated — the gate is a server-side header check on the submit — because the passcode is a
-// low-stakes shared knock, not identity, and the page must stay a free static edge asset.
+// The stakeholder backstage door is a static page over four server-gated API methods.
+// A visitor types the shared passcode at runtime; a successful feed read unlocks the one
+// dashboard for listing, submitting, completing, and deleting entries. The configured
+// passcode never enters this asset, and the presented value lives only in page memory.
 
-const title = 'Backstage — pass a link or a note to the team';
+const title = 'Backstage — one shared list for the room';
 const description =
-  'A passcode-gated page where a stakeholder hands the team a reference or a bit of feedback from a phone, no account needed.';
+  'A passcode-gated checklist where stakeholders and the team share references and feedback without accounts.';
 
-// One source of truth for the two entry types, shared by the markup and the script hint.
 const entryTypes = [
   {
     value: 'reference',
@@ -33,23 +29,25 @@ const entryTypes = [
     <section class="clay-surface intro" aria-labelledby="title">
       <p class="eyebrow">You're on the list</p>
       <h1 id="title">Backstage</h1>
-      <p class="tagline">Pass a link or a note straight to the team.</p>
+      <p class="tagline">One shared list, from first note to done.</p>
       <p class="lede">
-        Got something the team should see — a reference, an example, or a bit of
-        feedback? Drop it here with the passcode they gave you. It goes straight
-        to the people building this, no account and no sign-in.
+        Unlock once to see what the team has, add a reference or a thought, and keep
+        the checklist moving. No account and no second sign-in.
       </p>
       <p class="note" role="note">
-        Heads up: that passcode is a shared knock, not a vault. Please don't paste
-        passwords, private keys, or anything secret here — hand those over a secure
-        channel instead.
+        That passcode is a shared knock, not a vault. Please don't paste passwords,
+        private keys, or anything secret here — hand those over securely instead.
       </p>
     </section>
 
-    <section class="clay-surface" aria-labelledby="form-heading">
-      <h2 id="form-heading">Hand it over</h2>
+    <section id="backstage-gate" class="clay-surface" aria-labelledby="gate-heading">
+      <h2 id="gate-heading">Open the backstage list</h2>
+      <p class="section-copy">
+        Use the passcode the team gave you. It stays only in this page's memory and is
+        forgotten when you leave or reload.
+      </p>
 
-      <form id="backstage-form" novalidate>
+      <form id="bs-unlock-form" class="gate-form" novalidate>
         <div class="field">
           <label for="bs-passcode">Shared passcode</label>
           <input
@@ -62,130 +60,410 @@ const entryTypes = [
             spellcheck="false"
             required
           />
-          <p class="help">The team handed you this along with the link.</p>
+          <p class="help">One unlock opens the whole checklist for this visit.</p>
         </div>
-
-        <fieldset class="field">
-          <legend>What are you handing us?</legend>
-          {
-            entryTypes.map((option, index) => (
-              <label class="choice">
-                <input
-                  type="radio"
-                  name="type"
-                  value={option.value}
-                  checked={index === 0}
-                />
-                <span class="choice-body">
-                  <span class="choice-label">{option.label}</span>
-                  <span class="choice-hint">{option.hint}</span>
-                </span>
-              </label>
-            ))
-          }
-        </fieldset>
-
-        <div class="field">
-          <label for="bs-url">Link</label>
-          <input
-            id="bs-url"
-            name="url"
-            type="url"
-            inputmode="url"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck="false"
-            placeholder="https://…"
-          />
-          <p class="help" id="bs-url-help">Paste the web address for a reference.</p>
-        </div>
-
-        <div class="field">
-          <label for="bs-text">Say more</label>
-          <textarea id="bs-text" name="text" rows="5" required></textarea>
-          <p class="help">
-            What is it, and what should the team know about it?
-          </p>
-        </div>
-
-        <p id="bs-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
-
-        <button id="bs-submit" type="submit" class="clay-button">Send it over</button>
+        <p id="bs-unlock-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
+        <button id="bs-unlock" type="submit" class="clay-button">Open backstage</button>
       </form>
+    </section>
 
-      <section id="bs-confirm" class="clay-well confirm" aria-live="polite" hidden>
-        <h3 id="bs-confirm-heading" tabindex="-1">Got it — thanks.</h3>
-        <p class="lede">That's with the team now. Add another whenever you like.</p>
-        <dl class="confirm-body">
-          <div class="confirm-row">
-            <dt>Kind</dt>
-            <dd id="bs-confirm-type">—</dd>
+    <section
+      id="backstage-dashboard"
+      class="clay-surface dashboard"
+      aria-labelledby="dashboard-heading"
+      hidden
+    >
+      <header class="dashboard-header">
+        <p class="eyebrow">Backstage is open</p>
+        <h2 id="dashboard-heading" tabindex="-1">The shared checklist</h2>
+        <p class="section-copy">
+          Add what the team should see, mark finished work complete, or clear out what
+          no longer belongs here.
+        </p>
+      </header>
+
+      <section class="dashboard-section" aria-labelledby="add-heading">
+        <h3 id="add-heading">Add something</h3>
+        <form id="backstage-form" novalidate>
+          <fieldset class="field">
+            <legend>What are you handing us?</legend>
+            {
+              entryTypes.map((option, index) => (
+                <label class="choice">
+                  <input
+                    type="radio"
+                    name="type"
+                    value={option.value}
+                    checked={index === 0}
+                  />
+                  <span class="choice-body">
+                    <span class="choice-label">{option.label}</span>
+                    <span class="choice-hint">{option.hint}</span>
+                  </span>
+                </label>
+              ))
+            }
+          </fieldset>
+
+          <div class="field">
+            <label for="bs-url">Link</label>
+            <input
+              id="bs-url"
+              name="url"
+              type="url"
+              inputmode="url"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="https://…"
+            />
+            <p class="help" id="bs-url-help">Paste the web address for a reference.</p>
           </div>
-          <div class="confirm-row" id="bs-confirm-url-row" hidden>
-            <dt>Link</dt>
-            <dd id="bs-confirm-url" class="confirm-break">—</dd>
+
+          <div class="field">
+            <label for="bs-text">Say more</label>
+            <textarea id="bs-text" name="text" rows="5" required></textarea>
+            <p class="help">What is it, and what should the team know about it?</p>
           </div>
-          <div class="confirm-row">
-            <dt>What you said</dt>
-            <dd id="bs-confirm-text" class="confirm-break">—</dd>
-          </div>
-        </dl>
-        <button id="bs-again" type="button" class="clay-button">Send another</button>
+
+          <p id="bs-form-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
+          <button id="bs-submit" type="submit" class="clay-button">Add to the list</button>
+        </form>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="list-heading">
+        <div class="section-heading">
+          <h3 id="list-heading">What the team has</h3>
+          <p id="bs-list-status" class="list-status" aria-live="polite"></p>
+        </div>
+        <p id="bs-list-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
+        <p id="bs-empty" class="clay-well empty" hidden>
+          Nothing here yet. Add the first link or note above.
+        </p>
+        <ul id="bs-entry-list" class="entry-list" aria-label="Backstage entries"></ul>
       </section>
     </section>
   </main>
 </BaseLayout>
 
 <script>
-  // Runs in the browser. The page is a static asset; this is the only moving part. It reads
-  // the fields, sends the entry to the server's write route with the passcode in a header, and
-  // swaps the form for a confirmation. No secret lives here — the passcode is the visitor's
-  // runtime input, sent only in the x-demo-passcode header, never stored or put in the URL.
-
-  // Kept in step with src/lib/backstage-submission.ts (the server is the authority; these are
-  // just friendly client-side hints so a phone user isn't bounced through a round-trip).
+  // The credential state is deliberately module-private and ephemeral. It is never put in
+  // storage, a cookie, a URL, markup, or a request body. Every server operation still checks
+  // the shared header independently; the successful feed read is only the browser's unlock.
+  const PASSCODE_HEADER = 'x-demo-passcode';
   const MAX_URL = 2048;
   const MAX_TEXT = 20_000;
 
-  const form = document.getElementById('backstage-form') as HTMLFormElement | null;
+  type EntryType = 'reference' | 'feedback';
+  interface EntryView {
+    id: number;
+    type: EntryType;
+    url: string;
+    text: string;
+    submittedAt: string;
+    completedAt: string | null;
+  }
+  interface FeedView {
+    schemaVersion: 1;
+    gate: 'backstage';
+    count: number;
+    entries: EntryView[];
+  }
 
-  if (form) {
-    const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
-    const passcode = el<HTMLInputElement>('bs-passcode')!;
-    const url = el<HTMLInputElement>('bs-url')!;
-    const text = el<HTMLTextAreaElement>('bs-text')!;
-    const urlHelp = el<HTMLParagraphElement>('bs-url-help')!;
-    const errorEl = el<HTMLParagraphElement>('bs-error')!;
-    const submit = el<HTMLButtonElement>('bs-submit')!;
-    const confirm = el<HTMLElement>('bs-confirm')!;
-    const again = el<HTMLButtonElement>('bs-again')!;
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+  const gate = el<HTMLElement>('backstage-gate');
+  const dashboard = el<HTMLElement>('backstage-dashboard');
+  const unlockForm = el<HTMLFormElement>('bs-unlock-form');
+  const passcodeInput = el<HTMLInputElement>('bs-passcode');
+  const unlockButton = el<HTMLButtonElement>('bs-unlock');
+  const unlockError = el<HTMLParagraphElement>('bs-unlock-error');
+  const entryForm = el<HTMLFormElement>('backstage-form');
+  const urlInput = el<HTMLInputElement>('bs-url');
+  const textInput = el<HTMLTextAreaElement>('bs-text');
+  const urlHelp = el<HTMLParagraphElement>('bs-url-help');
+  const formError = el<HTMLParagraphElement>('bs-form-error');
+  const submitButton = el<HTMLButtonElement>('bs-submit');
+  const listStatus = el<HTMLParagraphElement>('bs-list-status');
+  const listError = el<HTMLParagraphElement>('bs-list-error');
+  const empty = el<HTMLParagraphElement>('bs-empty');
+  const entryList = el<HTMLUListElement>('bs-entry-list');
 
-    const selectedType = (): string => {
-      const picked = form.querySelector<HTMLInputElement>('input[name="type"]:checked');
-      return picked ? picked.value : 'reference';
+  let unlockedPasscode = '';
+  let entries: EntryView[] = [];
+
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
+  const isEntry = (value: unknown): value is EntryView =>
+    isRecord(value) &&
+    Number.isSafeInteger(value.id) &&
+    Number(value.id) > 0 &&
+    (value.type === 'reference' || value.type === 'feedback') &&
+    typeof value.url === 'string' &&
+    typeof value.text === 'string' &&
+    typeof value.submittedAt === 'string' &&
+    (value.completedAt === null || typeof value.completedAt === 'string');
+
+  const isFeed = (value: unknown): value is FeedView =>
+    isRecord(value) &&
+    value.schemaVersion === 1 &&
+    value.gate === 'backstage' &&
+    Number.isSafeInteger(value.count) &&
+    Array.isArray(value.entries) &&
+    value.entries.length === value.count &&
+    value.entries.every(isEntry);
+
+  const clearAlert = (node: HTMLElement | null) => {
+    if (!node) return;
+    node.hidden = true;
+    node.textContent = '';
+  };
+
+  const showAlert = (node: HTMLElement | null, message: string, focus?: HTMLElement | null) => {
+    if (!node) return;
+    node.textContent = message;
+    node.hidden = false;
+    focus?.focus();
+  };
+
+  const setStatus = (message: string) => {
+    if (listStatus) listStatus.textContent = message;
+  };
+
+  const requestHeaders = (passcode: string, json = false): HeadersInit => ({
+    [PASSCODE_HEADER]: passcode,
+    ...(json ? { 'content-type': 'application/json' } : {}),
+  });
+
+  const readFeed = async (
+    passcode: string,
+  ): Promise<{ response: Response; feed: FeedView | null }> => {
+    const response = await fetch('/api/backstage/feed', {
+      headers: requestHeaders(passcode),
+    });
+    if (!response.ok) return { response, feed: null };
+    const body: unknown = await response.json();
+    return { response, feed: isFeed(body) ? body : null };
+  };
+
+  const formatTime = (value: string): string => {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.valueOf()) ? value : parsed.toLocaleString();
+  };
+
+  const makeText = (tag: 'p' | 'span', className: string, value: string): HTMLElement => {
+    const node = document.createElement(tag);
+    node.className = className;
+    node.textContent = value;
+    return node;
+  };
+
+  const renderEntries = () => {
+    if (!entryList || !empty) return;
+    entryList.replaceChildren();
+    empty.hidden = entries.length !== 0;
+
+    for (const entry of entries) {
+      const item = document.createElement('li');
+      item.className = `entry-card${entry.completedAt === null ? '' : ' is-complete'}`;
+      item.dataset.entryId = String(entry.id);
+
+      const checkLabel = document.createElement('label');
+      checkLabel.className = 'entry-check';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = entry.completedAt !== null;
+      checkbox.disabled = entry.completedAt !== null;
+      checkbox.setAttribute('aria-label', `Mark entry ${entry.id} complete`);
+      const checkBody = document.createElement('span');
+      checkBody.className = 'entry-check-body';
+      checkBody.appendChild(
+        makeText(
+          'span',
+          'entry-state',
+          entry.completedAt === null ? 'Ready to review' : 'Complete',
+        ),
+      );
+      checkBody.appendChild(
+        makeText(
+          'span',
+          'entry-kind',
+          entry.type === 'reference' ? 'Link or reference' : 'Feedback',
+        ),
+      );
+      checkLabel.appendChild(checkbox);
+      checkLabel.appendChild(checkBody);
+
+      const meta = makeText(
+        'p',
+        'entry-meta',
+        `Added ${formatTime(entry.submittedAt)} · Entry ${entry.id}`,
+      );
+      const content = makeText('p', 'entry-text', entry.text);
+      item.appendChild(checkLabel);
+      item.appendChild(meta);
+      item.appendChild(content);
+
+      if (entry.url !== '') {
+        const link = document.createElement('a');
+        link.className = 'entry-link';
+        link.href = entry.url;
+        link.target = '_blank';
+        link.rel = 'noreferrer';
+        link.textContent = entry.url;
+        item.appendChild(link);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'entry-actions';
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'clay-button quiet-button';
+      deleteButton.textContent = 'Delete';
+      deleteButton.setAttribute('aria-label', `Delete entry ${entry.id}`);
+      actions.appendChild(deleteButton);
+      item.appendChild(actions);
+
+      checkbox.addEventListener('change', async () => {
+        if (!checkbox.checked || entry.completedAt !== null) return;
+        clearAlert(listError);
+        checkbox.disabled = true;
+        deleteButton.disabled = true;
+        item.setAttribute('aria-busy', 'true');
+        setStatus(`Completing entry ${entry.id}…`);
+        try {
+          const response = await fetch(`/api/backstage/entries/${entry.id}`, {
+            method: 'PATCH',
+            headers: requestHeaders(unlockedPasscode),
+          });
+          if (!response.ok) throw new Error(`completion returned ${response.status}`);
+          await refreshEntries(`Entry ${entry.id} is complete.`);
+        } catch {
+          checkbox.checked = false;
+          checkbox.disabled = false;
+          deleteButton.disabled = false;
+          item.removeAttribute('aria-busy');
+          setStatus('');
+          showAlert(
+            listError,
+            "That entry couldn't be completed just now — refresh or try again.",
+            checkbox,
+          );
+        }
+      });
+
+      deleteButton.addEventListener('click', async () => {
+        if (!window.confirm(`Delete entry ${entry.id}? This can't be undone.`)) return;
+        clearAlert(listError);
+        checkbox.disabled = true;
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Deleting…';
+        item.setAttribute('aria-busy', 'true');
+        setStatus(`Deleting entry ${entry.id}…`);
+        try {
+          const response = await fetch(`/api/backstage/entries/${entry.id}`, {
+            method: 'DELETE',
+            headers: requestHeaders(unlockedPasscode),
+          });
+          if (!response.ok) throw new Error(`delete returned ${response.status}`);
+          await refreshEntries(`Entry ${entry.id} was deleted.`);
+        } catch {
+          checkbox.disabled = entry.completedAt !== null;
+          deleteButton.disabled = false;
+          deleteButton.textContent = 'Delete';
+          item.removeAttribute('aria-busy');
+          setStatus('');
+          showAlert(
+            listError,
+            "That entry couldn't be deleted just now — refresh or try again.",
+            deleteButton,
+          );
+        }
+      });
+
+      entryList.appendChild(item);
+    }
+  };
+
+  async function refreshEntries(message = ''): Promise<void> {
+    const { response, feed } = await readFeed(unlockedPasscode);
+    if (!response.ok || feed === null) {
+      throw new Error(`feed refresh returned ${response.status}`);
+    }
+    entries = feed.entries;
+    renderEntries();
+    setStatus(message === '' ? `${feed.count} ${feed.count === 1 ? 'entry' : 'entries'}` : message);
+  }
+
+  if (unlockForm && passcodeInput && unlockButton && gate && dashboard) {
+    unlockForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearAlert(unlockError);
+      const candidate = passcodeInput.value;
+      if (candidate.trim() === '') {
+        showAlert(unlockError, 'Pop in the passcode the team gave you.', passcodeInput);
+        return;
+      }
+
+      const original = unlockButton.textContent;
+      unlockButton.disabled = true;
+      unlockButton.textContent = 'Opening…';
+      try {
+        const { response, feed } = await readFeed(candidate);
+        if ((response.status === 401 || response.status === 403) && feed === null) {
+          showAlert(
+            unlockError,
+            "That passcode didn't work — check it with the team and try again.",
+            passcodeInput,
+          );
+          return;
+        }
+        if (!response.ok || feed === null) {
+          showAlert(
+            unlockError,
+            "Backstage couldn't open just now — give it a moment and try again.",
+            unlockButton,
+          );
+          return;
+        }
+
+        unlockedPasscode = candidate;
+        entries = feed.entries;
+        passcodeInput.value = '';
+        renderEntries();
+        setStatus(`${feed.count} ${feed.count === 1 ? 'entry' : 'entries'}`);
+        gate.hidden = true;
+        dashboard.hidden = false;
+        el<HTMLElement>('dashboard-heading')?.focus();
+      } catch {
+        showAlert(
+          unlockError,
+          "Couldn't reach backstage just now — check your connection and try again.",
+          unlockButton,
+        );
+      } finally {
+        unlockButton.disabled = false;
+        unlockButton.textContent = original;
+      }
+    });
+  }
+
+  if (entryForm && urlInput && textInput && urlHelp && submitButton) {
+    const selectedType = (): EntryType => {
+      const picked = entryForm.querySelector<HTMLInputElement>('input[name="type"]:checked');
+      return picked?.value === 'feedback' ? 'feedback' : 'reference';
     };
 
-    // The link is required for a reference and optional for feedback; keep the helper honest.
     const syncUrlHelp = () => {
       urlHelp.textContent =
         selectedType() === 'reference'
           ? 'Paste the web address for a reference.'
           : 'A link is optional for feedback.';
     };
-    for (const radio of form.querySelectorAll('input[name="type"]')) {
+    for (const radio of entryForm.querySelectorAll('input[name="type"]')) {
       radio.addEventListener('change', syncUrlHelp);
     }
     syncUrlHelp();
-
-    const showError = (message: string, focus: HTMLElement) => {
-      errorEl.textContent = message;
-      errorEl.hidden = false;
-      focus.focus();
-    };
-    const clearError = () => {
-      errorEl.hidden = true;
-      errorEl.textContent = '';
-    };
 
     const isWebUrl = (value: string): boolean => {
       try {
@@ -196,140 +474,80 @@ const entryTypes = [
       }
     };
 
-    form.addEventListener('submit', async (event) => {
+    entryForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      clearError();
+      clearAlert(formError);
+      clearAlert(listError);
 
-      const passcodeValue = passcode.value;
       const type = selectedType();
-      const urlValue = url.value.trim();
-      const textValue = text.value;
-
-      // Friendly, server-mirroring checks. The server re-validates everything regardless.
-      if (passcodeValue.trim() === '') {
-        showError('Pop in the passcode the team gave you.', passcode);
+      const url = urlInput.value.trim();
+      const text = textInput.value;
+      if (text.trim() === '') {
+        showAlert(formError, 'Add a line or two so the team knows what this is.', textInput);
         return;
       }
-      if (textValue.trim() === '') {
-        showError('Add a line or two so the team knows what this is.', text);
+      if (text.length > MAX_TEXT) {
+        showAlert(formError, 'That note is a bit long — trim it down and try again.', textInput);
         return;
       }
-      if (textValue.length > MAX_TEXT) {
-        showError('That note is a bit long — trim it down and try again.', text);
+      if (url !== '' && (url.length > MAX_URL || !isWebUrl(url))) {
+        showAlert(formError, 'That link should be a web address starting with http.', urlInput);
         return;
       }
-      if (urlValue !== '' && (urlValue.length > MAX_URL || !isWebUrl(urlValue))) {
-        showError('That link should be a web address starting with http.', url);
-        return;
-      }
-      if (type === 'reference' && urlValue === '') {
-        showError('A reference needs a link — paste the web address.', url);
+      if (type === 'reference' && url === '') {
+        showAlert(formError, 'A reference needs a link — paste the web address.', urlInput);
         return;
       }
 
-      const original = submit.textContent;
-      submit.disabled = true;
-      submit.textContent = 'Sending…';
-
-      const isRecord = (value: unknown): value is Record<string, unknown> =>
-        typeof value === 'object' && value !== null;
-
-      const isEntryResponse = (
-        value: unknown,
-      ): value is {
-        entry: { type: 'reference' | 'feedback'; url: string; text: string };
-      } => {
-        if (!isRecord(value) || !isRecord(value.entry)) return false;
-        const entry = value.entry;
-        return (
-          (entry.type === 'reference' || entry.type === 'feedback') &&
-          typeof entry.url === 'string' &&
-          typeof entry.text === 'string'
-        );
-      };
-
+      const original = submitButton.textContent;
+      submitButton.disabled = true;
+      submitButton.textContent = 'Adding…';
       try {
-        // Exactly the three fields the route accepts; submittedAt is stamped by the server.
-        const res = await fetch('/api/backstage/entries', {
+        const response = await fetch('/api/backstage/entries', {
           method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-demo-passcode': passcodeValue,
-          },
-          body: JSON.stringify({ type, url: urlValue, text: textValue }),
+          headers: requestHeaders(unlockedPasscode, true),
+          body: JSON.stringify({ type, url, text }),
         });
-
-        if (res.status === 201) {
-          const body: unknown = await res.json();
-          if (!isEntryResponse(body)) throw new Error('unexpected entry response');
-          const { entry } = body;
-          const setText = (id: string, value: string) => {
-            const node = document.getElementById(id);
-            if (node) node.textContent = value;
-          };
-          setText(
-            'bs-confirm-type',
-            entry.type === 'reference' ? 'A link or reference' : 'A bit of feedback',
-          );
-          const urlRow = document.getElementById('bs-confirm-url-row');
-          if (entry.url) {
-            setText('bs-confirm-url', entry.url);
-            if (urlRow) urlRow.hidden = false;
-          } else if (urlRow) {
-            urlRow.hidden = true;
-          }
-          setText('bs-confirm-text', entry.text);
-
-          form.hidden = true;
-          confirm.hidden = false;
-          document.getElementById('bs-confirm-heading')?.focus();
+        if (response.status === 201) {
+          urlInput.value = '';
+          textInput.value = '';
+          await refreshEntries('Added to the shared list.');
+          textInput.focus();
           return;
         }
-
-        if (res.status === 401 || res.status === 403) {
-          showError("That passcode didn't work — check it with the team and try again.", passcode);
-        } else if (res.status === 422) {
-          const body: unknown = await res.json().catch(() => null);
+        if (response.status === 401 || response.status === 403) {
+          showAlert(formError, 'This page is no longer unlocked — reload and open it again.', submitButton);
+        } else if (response.status === 422) {
+          const body: unknown = await response.json().catch(() => null);
           const issues =
             isRecord(body) &&
             Array.isArray(body.issues) &&
             body.issues.every((issue): issue is string => typeof issue === 'string')
               ? body.issues.join(' ')
               : '';
-          showError(
+          showAlert(
+            formError,
             issues === ''
               ? "That didn't go through — give it another look and resend."
               : `That didn't go through: ${issues}`,
-            text,
+            textInput,
           );
         } else {
-          showError("The server couldn't take it just now — give it a moment and resend.", submit);
+          showAlert(formError, "The server couldn't take it just now — give it a moment and resend.", submitButton);
         }
       } catch {
-        showError("Couldn't reach the server just now — check your connection and resend.", submit);
+        showAlert(formError, "Couldn't reach the server just now — check your connection and resend.", submitButton);
       } finally {
-        submit.disabled = false;
-        submit.textContent = original;
+        submitButton.disabled = false;
+        submitButton.textContent = original;
       }
-    });
-
-    // "Send another": keep the passcode in the field (in memory only), clear the entry.
-    again.addEventListener('click', () => {
-      clearError();
-      url.value = '';
-      text.value = '';
-      confirm.hidden = true;
-      form.hidden = false;
-      syncUrlHelp();
-      text.focus();
     });
   }
 </script>
 
 <style>
-  /* Page-specific styling only. INVARIANT (matches base.css / index.astro): every color,
-     radius, shadow, font, and space resolves from a token via var(--…); no literals except the
-     1px control hairline. Retheme happens in tokens.css, never here. */
+  /* Page-specific styling only. Every visual value resolves from the shared tokens except
+     the established 1px control hairline. */
   main {
     display: flex;
     flex-direction: column;
@@ -354,16 +572,25 @@ const entryTypes = [
     font-weight: 700;
   }
 
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+  }
+
   h1 {
     margin: 0 0 var(--space-2xs);
-    font-weight: 600;
     font-size: var(--text-3xl);
   }
 
   h2 {
-    margin: 0 0 var(--space-md);
-    font-weight: 600;
+    margin: 0 0 var(--space-sm);
     font-size: var(--text-2xl);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: var(--text-xl);
   }
 
   .tagline {
@@ -373,13 +600,13 @@ const entryTypes = [
     color: var(--color-accent);
   }
 
-  .lede {
+  .lede,
+  .section-copy {
     margin: 0;
     font-size: var(--text-base);
     color: var(--color-text-soft);
   }
 
-  /* Honest security-level line — a calm inset well, not an alarm. */
   .note {
     margin: var(--space-md) 0 0;
     padding: var(--space-sm) var(--space-md);
@@ -390,10 +617,14 @@ const entryTypes = [
     color: var(--color-text-soft);
   }
 
-  /* --- Form ---------------------------------------------------------------- */
-  form {
+  form,
+  .gate-form {
     display: grid;
     gap: var(--space-lg);
+  }
+
+  .gate-form {
+    margin-top: var(--space-lg);
   }
 
   .field {
@@ -401,7 +632,7 @@ const entryTypes = [
     gap: var(--space-2xs);
     margin: 0;
     padding: 0;
-    border: none; /* reset for <fieldset> */
+    border: none;
   }
 
   label,
@@ -412,14 +643,14 @@ const entryTypes = [
     color: var(--color-text);
   }
 
-  .help {
+  .help,
+  .list-status,
+  .entry-meta {
     margin: 0;
     font-size: var(--text-xs);
     color: var(--color-text-soft);
   }
 
-  /* Inputs and textarea read as pressed-in wells (the clay counterpart of the raised card).
-     min-height meets the 44px touch target (P3) via the shared control token. */
   input[type='password'],
   input[type='url'],
   textarea {
@@ -441,7 +672,6 @@ const entryTypes = [
     min-height: calc(var(--control-height) * 2.5);
   }
 
-  /* Radios: each choice is a full-width tappable row with a comfortable target. */
   .choice {
     display: flex;
     align-items: flex-start;
@@ -452,7 +682,8 @@ const entryTypes = [
     cursor: pointer;
   }
 
-  .choice input[type='radio'] {
+  .choice input[type='radio'],
+  .entry-check input[type='checkbox'] {
     width: var(--space-md);
     height: var(--space-md);
     margin-top: var(--space-3xs);
@@ -460,18 +691,21 @@ const entryTypes = [
     flex: none;
   }
 
-  .choice-body {
+  .choice-body,
+  .entry-check-body {
     display: grid;
     gap: var(--space-3xs);
   }
 
-  .choice-label {
+  .choice-label,
+  .entry-state {
     font-size: var(--text-base);
     font-weight: 700;
     color: var(--color-text);
   }
 
-  .choice-hint {
+  .choice-hint,
+  .entry-kind {
     font-size: var(--text-xs);
     color: var(--color-text-soft);
   }
@@ -491,53 +725,105 @@ const entryTypes = [
     justify-self: start;
   }
 
-  /* --- Confirmation -------------------------------------------------------- */
-  .confirm {
-    margin-top: var(--space-md);
-    padding: clamp(var(--space-md), 4vw, var(--space-lg));
+  .dashboard {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .dashboard-header,
+  .dashboard-section {
     display: grid;
     gap: var(--space-md);
   }
 
-  .confirm h3 {
-    margin: 0;
-    font-size: var(--text-xl);
-    font-weight: 600;
+  .dashboard-section {
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
   }
 
-  .confirm .lede {
-    margin: 0;
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
   }
 
-  .confirm-body {
+  .entry-list {
+    display: grid;
+    gap: var(--space-md);
     margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entry-card {
     display: grid;
     gap: var(--space-sm);
-  }
-
-  .confirm-row {
-    display: grid;
-    gap: var(--space-3xs);
-  }
-
-  .confirm-body dt {
-    margin: 0;
-    font-size: var(--text-xs);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-accent);
-    font-weight: 700;
-  }
-
-  .confirm-body dd {
-    margin: 0;
-    font-size: var(--text-base);
-    color: var(--color-text);
-  }
-
-  /* Long links / notes never blow out a narrow phone viewport. */
-  .confirm-break {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-inset);
     overflow-wrap: anywhere;
+  }
+
+  .entry-card.is-complete .entry-text {
+    text-decoration: line-through;
+    color: var(--color-text-soft);
+  }
+
+  .entry-check {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    min-height: var(--control-height);
+    font-weight: 400;
+  }
+
+  .entry-check:not(:has(input:disabled)) {
+    cursor: pointer;
+  }
+
+  .entry-text {
+    margin: 0;
     white-space: pre-wrap;
+  }
+
+  .entry-link {
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+  }
+
+  .entry-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .quiet-button {
+    min-height: var(--control-height);
+  }
+
+  .empty {
+    margin: 0;
+    padding: var(--space-md);
+    color: var(--color-text-soft);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  @media (max-width: 30rem) {
+    .clay-surface {
+      padding-inline: var(--space-md);
+    }
+
+    .section-heading {
+      display: grid;
+    }
+
+    .entry-actions .clay-button {
+      width: 100%;
+    }
   }
 </style>

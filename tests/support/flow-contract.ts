@@ -14,11 +14,16 @@ export const FLOW_STEP = {
   observeStall: 'observe the stalled boundary stays narrated',
 } as const;
 
-// The backstage form's phone-flow steps, named like FLOW_STEP so failures read plainly.
+// The unified backstage dashboard's phone-flow steps, named so failures identify the exact
+// credential or checklist transition that broke.
 export const BACKSTAGE_STEP = {
-  openForm: 'open the backstage form',
-  submitReference: 'submit a reference from a phone',
-  confirmStored: 'confirm it reached the store',
+  openLocked: 'open the locked backstage dashboard',
+  refuseWrong: 'refuse a wrong passcode',
+  unlockAndList: 'unlock once and list existing entries',
+  submitWithoutSecondCredential: 'submit without a second credential',
+  completeFromChecklist: 'complete an entry from the checklist',
+  deleteFromChecklist: 'delete an entry from the checklist',
+  confirmCanonical: 'confirm canonical store state',
 } as const;
 
 // The shared low-stakes passcode used by the backstage phone flow. The single value the
@@ -42,11 +47,12 @@ export const FLOW_BUDGET_MS = {
   // receiptStep. Worst-case step sums stay within the unchanged test cap
   // (action 10s + receiptStep 5s + actionStep 5s = test 20s).
   actionStep: 5_000,
-  test: 20_000,
+  // The unified backstage flow performs unlock plus three mutations and canonical refreshes.
+  test: 35_000,
   // The backstage dev server applies the D1 migration before `astro dev` is ready, so its
   // startup budget is larger than the receipt-only flow needs.
   serverStartup: 30_000,
-  run: 40_000,
+  run: 60_000,
 } as const;
 
 // A dedicated port keeps the owned test server away from Astro's usual 4321,
