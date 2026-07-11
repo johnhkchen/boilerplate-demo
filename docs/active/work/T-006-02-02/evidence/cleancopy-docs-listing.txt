@@ -1,0 +1,37 @@
+# Clean-copy docs listing — T-006-02-02 acceptance clause 3
+# Clean copy: /private/tmp/claude-501/-Users-johnchen-swe-repos-boilerplate-demo/3299e229-5e22-4d03-bd5d-ed37d572da11/scratchpad/cleancopy
+# Captured: 2026-07-11T06:37:57Z
+
+$ cd $CLEANCOPY && find docs -type f | sort
+docs/active/demand.md
+docs/archive/demand-cleared.md
+docs/demo-environments.md
+docs/demo-threat-model.md
+docs/knowledge/assembly-playbook.md
+docs/knowledge/backstage-retrieval-seam.md
+docs/knowledge/charter.md
+docs/knowledge/demo-environments-decisions.md
+docs/knowledge/deployment.md
+docs/knowledge/integration-check.md
+docs/knowledge/product-spec.md
+docs/knowledge/rdspi-workflow.md
+docs/knowledge/sandbox-session-spike.md
+docs/knowledge/sandbox-sleep-wake-spike.md
+docs/knowledge/session-access.md
+docs/knowledge/session-image.md
+docs/knowledge/session-lifecycle.md
+docs/knowledge/vend-workflow.md
+docs/knowledge/vision.md
+
+$ ls docs/active
+demand.md
+
+$ ls -d docs/active/epic docs/active/stories docs/active/tickets docs/active/work docs/active/pm 2>&1
+ls: docs/active/epic: No such file or directory
+ls: docs/active/pm: No such file or directory
+ls: docs/active/stories: No such file or directory
+ls: docs/active/tickets: No such file or directory
+ls: docs/active/work: No such file or directory
+
+$ git status 2>&1 | head -1   # still not a git repo
+fatal: not a git repository (or any of the parent directories): .git
