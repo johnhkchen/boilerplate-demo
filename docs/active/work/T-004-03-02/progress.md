@@ -257,16 +257,27 @@ Documented deviations:
 
 No deviation expands the product scope.
 
-## Remaining verification before Review
+## Final verification
 
-- full `npm test` after documentation;
-- `npm run session:types:check`;
-- session TypeScript and Wrangler dry run via `npm run session:validate`;
-- stable root `npm run typecheck`;
-- `git diff --check`;
-- prohibited-pattern and full-file review;
-- final generated binding check;
-- Review artifact and final Progress update.
+All planned checks completed:
+
+- `npm test`: **126/126 passed**, including 17 new lifecycle/CLI tests;
+- `npm run session:types:check`: generated session types current;
+- session TypeScript: zero errors;
+- Wrangler dry run: passed, image built, bindings/routes/migrations resolved;
+- final upload bundle: 612.77 KiB / 133.24 KiB gzip;
+- `npm run session:validate`: passed as the combined session gate;
+- `npm run typecheck`: 49 files, zero errors/warnings/hints;
+- stable App generated binding check: current;
+- `git diff --check`: clean;
+- full new-source read: complete;
+- prohibited-pattern search: no `passThroughOnException`, `Math.random`, double cast,
+  runtime `any`, hardcoded secret-like session variables, or broad session route;
+- Docker cleanup: zero matching running session/helper containers;
+- Review artifact: completed.
+
+The only emitted application warning is the repository's pre-existing deprecated Astro
+`session.driver` string warning. It is unrelated to this ticket and does not fail typecheck.
 
 ## Open gates
 
@@ -276,3 +287,8 @@ No deviation expands the product scope.
 - remote TLS/Custom Domain routing is not proven.
 - uncommitted work is not yet backed up before destroy/platform replacement.
 - the one-session keepalive must be explicitly torn down to avoid idle cost.
+
+## Implement completion
+
+Implement phase is complete. Review is recorded in `review.md`. No ticket phase/status field
+was manually changed.

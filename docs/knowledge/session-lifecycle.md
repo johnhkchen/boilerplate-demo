@@ -1,7 +1,9 @@
 # One collaborative session lifecycle
 
-**Ticket:** `T-004-03-02`  
-**Validated locally:** 2026-07-10 (America/Los_Angeles) / 2026-07-11 UTC  
+**Ticket:** `T-004-03-02`
+
+**Validated locally:** 2026-07-10 (America/Los_Angeles) / 2026-07-11 UTC
+
 **Scope:** one fixed session, Cloudflare Sandbox SDK 0.12.3
 
 This is the durable operator and runtime contract for the MVP's one collaborative session.
