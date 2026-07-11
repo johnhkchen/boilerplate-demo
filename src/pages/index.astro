@@ -1,24 +1,30 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const name = 'Demo Runway';
+// ─── Template slots ─────────────────────────────────────────────
+// Every generated demo names these two things from its idea. The
+// page copy leans on them, so renaming here reshapes the surface.
+const DEMO_NAME = 'Demo Runway';
+const PRIMARY_ACTION_LABEL = 'Ask for a fresh note';
+// ────────────────────────────────────────────────────────────────
+
 const tagline = 'The starting line every demo inherits.';
-const title = 'Demo Runway — the starting line every demo inherits';
+const title = `${DEMO_NAME} — the starting line every demo inherits`;
 const description =
-  'A working, public web page you can build your demo on top of, with one live server-backed answer already wired in.';
+  'A live demo page: watch the server answer with a freshly signed note, and leave the team a note of your own.';
 ---
 
 <BaseLayout title={title} description={description}>
   <main>
     <section class="clay-surface" aria-labelledby="title">
-      <p class="eyebrow">Ready when you are</p>
-      <h1 id="title">{name}</h1>
+      <p class="eyebrow">Start here</p>
+      <h1 id="title">{DEMO_NAME}</h1>
       <p class="tagline">{tagline}</p>
       <p class="lede">
-        This is the working starting point. It's live, it's static, and it costs
-        nothing to leave running. Point your coding agent at it and build the
-        demo you came to make — the one moving part below shows the wiring is
-        real.
+        You've landed on a working demo page — live right now, and yours to
+        try. Two things to do here: watch the card below get a freshly signed
+        answer from the server, and further down, leave the team a note of
+        your own.
       </p>
     </section>
 
@@ -27,13 +33,13 @@ const description =
          server (/api/receipt) for a freshly signed note. The signing key stays on
          the server — it is never in this page's source or scripts. -->
     <section class="clay-surface receipt" aria-labelledby="receipt-heading" aria-live="polite">
-      <p class="eyebrow">Fresh from the server</p>
+      <p class="eyebrow">Watch the server answer</p>
       <h2 id="receipt-heading">A signed note, made just now</h2>
       <p class="lede">
-        The page around this card is just a file — it loads instantly and costs
-        nothing to leave up. This card is the exception: a moment after the page
-        loads, it quietly asks the server for a freshly signed note, made with a
-        key your browser never sees. Here's what came back.
+        The page around this card is just a file — it loads instantly. This
+        card is the one live part: it asks the server for a freshly signed
+        note, made with a key your browser never sees. Here's what came back —
+        and you can ask for another anytime.
       </p>
       <div class="clay-well receipt-panel">
         <p id="receipt-status" class="receipt-status">Asking the server…</p>
@@ -52,13 +58,29 @@ const description =
           </div>
         </dl>
       </div>
+      <button type="button" id="primary-action" class="clay-button primary-action">
+        {PRIMARY_ACTION_LABEL}
+      </button>
+    </section>
+
+    <section class="clay-surface" aria-labelledby="note-heading">
+      <p class="eyebrow">Leave a note</p>
+      <h2 id="note-heading">Pass the team a thought</h2>
+      <p class="lede">
+        Got a link, an example, or a bit of feedback for the people building
+        this? There's a page for that — no account, no sign-in.
+      </p>
+      <a id="backstage-link" class="backstage-link" href="/backstage">
+        Leave a note for the team
+      </a>
     </section>
   </main>
 </BaseLayout>
 
 <script>
   // Runs in the browser: the page is static, so it fetches the live boundary and
-  // fills the card. Only a relative request + DOM writes live here — no secret.
+  // fills the card — once on load, and again whenever the primary action asks.
+  // Only a relative request + DOM writes live here — no secret.
   const statusEl = document.getElementById('receipt-status');
   const bodyEl = document.getElementById('receipt-body');
   const set = (id: string, value: string) => {
@@ -82,21 +104,43 @@ const description =
     );
   };
 
-  try {
-    const res = await fetch('/api/receipt', { headers: { accept: 'application/json' } });
-    if (!res.ok) throw new Error(`server answered ${res.status}`);
-    const receipt: unknown = await res.json();
-    if (!isReceiptPayload(receipt)) throw new Error('unexpected receipt response');
-    set('receipt-issued', new Date(receipt.issuedAt).toLocaleString());
-    set('receipt-nonce', receipt.nonce);
-    set('receipt-signature', receipt.signature);
-    if (statusEl) statusEl.hidden = true;
-    if (bodyEl) bodyEl.hidden = false;
-  } catch {
+  async function loadReceipt(): Promise<void> {
     if (statusEl) {
-      statusEl.textContent = "The server didn't answer just now — try a refresh.";
+      statusEl.textContent = 'Asking the server…';
+      statusEl.hidden = false;
+    }
+    if (bodyEl) bodyEl.hidden = true;
+    try {
+      const res = await fetch('/api/receipt', { headers: { accept: 'application/json' } });
+      if (!res.ok) throw new Error(`server answered ${res.status}`);
+      const receipt: unknown = await res.json();
+      if (!isReceiptPayload(receipt)) throw new Error('unexpected receipt response');
+      set('receipt-issued', new Date(receipt.issuedAt).toLocaleString());
+      set('receipt-nonce', receipt.nonce);
+      set('receipt-signature', receipt.signature);
+      if (statusEl) statusEl.hidden = true;
+      if (bodyEl) bodyEl.hidden = false;
+    } catch {
+      if (statusEl) {
+        statusEl.textContent = "The server didn't answer just now — try a refresh.";
+      }
     }
   }
+
+  // Wire the primary action before the first load so it works even while the
+  // initial fetch is still in flight. Disabled during a round trip so a
+  // double-tap can't race two requests into the aria-live card.
+  const primaryAction = document.getElementById('primary-action') as HTMLButtonElement | null;
+  primaryAction?.addEventListener('click', async () => {
+    primaryAction.disabled = true;
+    try {
+      await loadReceipt();
+    } finally {
+      primaryAction.disabled = false;
+    }
+  });
+
+  await loadReceipt();
 </script>
 
 <style>
@@ -207,5 +251,27 @@ const description =
     overflow-wrap: anywhere;
     font-variant-numeric: tabular-nums;
     color: var(--color-text-soft);
+  }
+
+  /* The page's one primary action. The clay-button primitive (base.css) owns
+     the look; the page adds only the rhythm between the well and the button. */
+  .primary-action {
+    margin-top: var(--space-md);
+  }
+
+  /* The front-door path to backstage: a plain accent link, deliberately NOT a
+     clay-button — the page has exactly one of those. inline-flex + the shared
+     control height keep the tap target at 44px on a phone (P3) without making
+     the link look pressable like the primary action. */
+  .backstage-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-height);
+    margin-top: var(--space-sm);
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: var(--text-base);
+    text-decoration: underline;
+    text-underline-offset: var(--space-3xs);
   }
 </style>
