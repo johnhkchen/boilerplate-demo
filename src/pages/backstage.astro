@@ -340,7 +340,7 @@ const entryTypes = [
       });
 
       deleteButton.addEventListener('click', async () => {
-        if (!window.confirm(`Delete entry ${entry.id}? This can't be undone.`)) return;
+        if (!window.confirm(`Delete entry ${entry.id} for good?`)) return;
         clearAlert(listError);
         checkbox.disabled = true;
         deleteButton.disabled = true;
