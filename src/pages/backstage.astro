@@ -6,20 +6,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // dashboard for listing, submitting, completing, and deleting entries. The configured
 // passcode never enters this asset, and the presented value lives only in page memory.
 
-const title = 'Backstage — one shared list for the room';
+const title = 'Backstage';
 const description =
-  'A passcode-gated checklist where stakeholders and the team share references and feedback without accounts.';
+  'Share links and notes in Backstage, then mark or remove finished work.';
 
 const entryTypes = [
   {
     value: 'reference',
-    label: 'A link or reference',
-    hint: 'A page, doc, or example you want the team to look at.',
+    label: 'Link or reference',
+    hint: 'Add a page, document, or example.',
   },
   {
     value: 'feedback',
-    label: 'A bit of feedback',
-    hint: 'A thought, request, or comment. A link is optional.',
+    label: 'Feedback',
+    hint: 'Add a thought, request, or comment; a link is optional.',
   },
 ] as const;
 ---
@@ -27,25 +27,18 @@ const entryTypes = [
 <BaseLayout title={title} description={description}>
   <main>
     <section class="clay-surface intro" aria-labelledby="title">
-      <p class="eyebrow">You're on the list</p>
+      <p class="eyebrow">Share with your team</p>
       <h1 id="title">Backstage</h1>
       <p class="tagline">One shared list, from first note to done.</p>
-      <p class="lede">
-        Unlock once to see what the team has, add a reference or a thought, and keep
-        the checklist moving. No account and no second sign-in.
-      </p>
+      <p class="lede">Share links and notes in one checklist.</p>
       <p class="note" role="note">
-        That passcode is a shared knock, not a vault. Please don't paste passwords,
-        private keys, or anything secret here — hand those over securely instead.
+        Don't paste passwords, keys, or other secrets here; send them securely instead.
       </p>
     </section>
 
     <section id="backstage-gate" class="clay-surface" aria-labelledby="gate-heading">
       <h2 id="gate-heading">Open the backstage list</h2>
-      <p class="section-copy">
-        Use the passcode the team gave you. It stays only in this page's memory and is
-        forgotten when you leave or reload.
-      </p>
+      <p class="section-copy">Enter your shared passcode to open the list.</p>
 
       <form id="bs-unlock-form" class="gate-form" novalidate>
         <div class="field">
@@ -60,7 +53,6 @@ const entryTypes = [
             spellcheck="false"
             required
           />
-          <p class="help">One unlock opens the whole checklist for this visit.</p>
         </div>
         <p id="bs-unlock-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
         <button id="bs-unlock" type="submit" class="clay-button">Open backstage</button>
@@ -75,18 +67,15 @@ const entryTypes = [
     >
       <header class="dashboard-header">
         <p class="eyebrow">Backstage is open</p>
-        <h2 id="dashboard-heading" tabindex="-1">The shared checklist</h2>
-        <p class="section-copy">
-          Add what the team should see, mark finished work complete, or clear out what
-          no longer belongs here.
-        </p>
+        <h2 id="dashboard-heading" tabindex="-1">Shared checklist</h2>
+        <p class="section-copy">Add a link or note, then mark or delete each item.</p>
       </header>
 
       <section class="dashboard-section" aria-labelledby="add-heading">
         <h3 id="add-heading">Add something</h3>
         <form id="backstage-form" novalidate>
           <fieldset class="field">
-            <legend>What are you handing us?</legend>
+            <legend>What will you add?</legend>
             {
               entryTypes.map((option, index) => (
                 <label class="choice">
@@ -123,7 +112,7 @@ const entryTypes = [
           <div class="field">
             <label for="bs-text">Say more</label>
             <textarea id="bs-text" name="text" rows="5" required></textarea>
-            <p class="help">What is it, and what should the team know about it?</p>
+            <p class="help">Describe what it is and why it matters.</p>
           </div>
 
           <p id="bs-form-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
@@ -133,13 +122,11 @@ const entryTypes = [
 
       <section class="dashboard-section" aria-labelledby="list-heading">
         <div class="section-heading">
-          <h3 id="list-heading">What the team has</h3>
+          <h3 id="list-heading">On the list</h3>
           <p id="bs-list-status" class="list-status" aria-live="polite"></p>
         </div>
         <p id="bs-list-error" class="form-error" role="alert" aria-live="assertive" hidden></p>
-        <p id="bs-empty" class="clay-well empty" hidden>
-          Nothing here yet. Add the first link or note above.
-        </p>
+        <p id="bs-empty" class="clay-well empty" hidden>Add the first link or note above.</p>
         <ul id="bs-entry-list" class="entry-list" aria-label="Backstage entries"></ul>
       </section>
     </section>
@@ -346,7 +333,7 @@ const entryTypes = [
           setStatus('');
           showAlert(
             listError,
-            "That entry couldn't be completed just now — refresh or try again.",
+            "We couldn't mark that entry complete — refresh and try again.",
             checkbox,
           );
         }
@@ -375,7 +362,7 @@ const entryTypes = [
           setStatus('');
           showAlert(
             listError,
-            "That entry couldn't be deleted just now — refresh or try again.",
+            "We couldn't delete that entry — refresh and try again.",
             deleteButton,
           );
         }
@@ -401,7 +388,7 @@ const entryTypes = [
       clearAlert(unlockError);
       const candidate = passcodeInput.value;
       if (candidate.trim() === '') {
-        showAlert(unlockError, 'Pop in the passcode the team gave you.', passcodeInput);
+        showAlert(unlockError, 'Enter your shared passcode.', passcodeInput);
         return;
       }
 
@@ -413,7 +400,7 @@ const entryTypes = [
         if ((response.status === 401 || response.status === 403) && feed === null) {
           showAlert(
             unlockError,
-            "That passcode didn't work — check it with the team and try again.",
+            "That passcode didn't work — check it and try again.",
             passcodeInput,
           );
           return;
@@ -421,7 +408,7 @@ const entryTypes = [
         if (!response.ok || feed === null) {
           showAlert(
             unlockError,
-            "Backstage couldn't open just now — give it a moment and try again.",
+            "Backstage couldn't open — wait a moment and try again.",
             unlockButton,
           );
           return;
@@ -438,7 +425,7 @@ const entryTypes = [
       } catch {
         showAlert(
           unlockError,
-          "Couldn't reach backstage just now — check your connection and try again.",
+          "We couldn't reach Backstage — check your connection and try again.",
           unlockButton,
         );
       } finally {
@@ -483,19 +470,19 @@ const entryTypes = [
       const url = urlInput.value.trim();
       const text = textInput.value;
       if (text.trim() === '') {
-        showAlert(formError, 'Add a line or two so the team knows what this is.', textInput);
+        showAlert(formError, 'Add a note before continuing.', textInput);
         return;
       }
       if (text.length > MAX_TEXT) {
-        showAlert(formError, 'That note is a bit long — trim it down and try again.', textInput);
+        showAlert(formError, 'Shorten the note and try again.', textInput);
         return;
       }
       if (url !== '' && (url.length > MAX_URL || !isWebUrl(url))) {
-        showAlert(formError, 'That link should be a web address starting with http.', urlInput);
+        showAlert(formError, 'Enter a web address that starts with http.', urlInput);
         return;
       }
       if (type === 'reference' && url === '') {
-        showAlert(formError, 'A reference needs a link — paste the web address.', urlInput);
+        showAlert(formError, 'Add a web address for this reference.', urlInput);
         return;
       }
 
@@ -516,27 +503,22 @@ const entryTypes = [
           return;
         }
         if (response.status === 401 || response.status === 403) {
-          showAlert(formError, 'This page is no longer unlocked — reload and open it again.', submitButton);
+          showAlert(formError, 'Reload the page and open Backstage again.', submitButton);
         } else if (response.status === 422) {
-          const body: unknown = await response.json().catch(() => null);
-          const issues =
-            isRecord(body) &&
-            Array.isArray(body.issues) &&
-            body.issues.every((issue): issue is string => typeof issue === 'string')
-              ? body.issues.join(' ')
-              : '';
+          showAlert(formError, 'Check the entry and try again.', textInput);
+        } else {
           showAlert(
             formError,
-            issues === ''
-              ? "That didn't go through — give it another look and resend."
-              : `That didn't go through: ${issues}`,
-            textInput,
+            "The server couldn't save the entry — wait and try again.",
+            submitButton,
           );
-        } else {
-          showAlert(formError, "The server couldn't take it just now — give it a moment and resend.", submitButton);
         }
       } catch {
-        showAlert(formError, "Couldn't reach the server just now — check your connection and resend.", submitButton);
+        showAlert(
+          formError,
+          "We couldn't reach the server — check your connection and try again.",
+          submitButton,
+        );
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = original;

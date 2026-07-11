@@ -120,7 +120,7 @@ test('one passcode unlocks the backstage checklist and every entry action', asyn
       expect((await feedPromise).status()).toBe(200);
       await expect(page.locator('#backstage-gate')).toBeHidden();
       await expect(page.locator('#backstage-dashboard')).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'The shared checklist' })).toBeFocused();
+      await expect(page.getByRole('heading', { name: 'Shared checklist' })).toBeFocused();
       await expect(page.getByLabel('Shared passcode')).toHaveValue('');
       await expect(page.getByRole('listitem').filter({ hasText: seedText })).toBeVisible();
       await expect(page.locator('#backstage-dashboard input[type="password"]')).toHaveCount(0);
