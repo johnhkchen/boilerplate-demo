@@ -1,0 +1,112 @@
+{
+  "ticket": "T-004-03-02",
+  "observedAt": "2026-07-11T00:44:51.000Z",
+  "scope": "local-wrangler-docker",
+  "worker": {
+    "url": "http://127.0.0.1:8793",
+    "wrangler": "4.110.0",
+    "sandboxSdk": "0.12.3",
+    "remoteDeployment": false
+  },
+  "session": {
+    "slug": "session",
+    "revision": "ec9dd46678419afdb22bf5aa1e8d5ec7a9adc119",
+    "repository": "https://github.com/johnhkchen/boilerplate-demo.git",
+    "previewHost": "demo-session.b28.dev",
+    "editorHost": "code-session.b28.dev"
+  },
+  "initialStatus": {
+    "phase": "idle",
+    "processes": []
+  },
+  "up": {
+    "httpStatus": 200,
+    "changed": true,
+    "requestDurationMs": 12866,
+    "provisionDurationMs": 7424,
+    "phase": "ready",
+    "worktree": "/workspace/session",
+    "astro": {
+      "id": "astro-dev",
+      "pid": 155,
+      "status": "running",
+      "readyMs": 2887,
+      "port": 4321
+    },
+    "codeServer": {
+      "id": "code-server",
+      "pid": 260,
+      "status": "running",
+      "port": 8080
+    }
+  },
+  "status": {
+    "phase": "ready",
+    "placementId": null,
+    "bothProcessesRunning": true
+  },
+  "logs": {
+    "httpStatus": 200,
+    "astroStdoutBounded": true,
+    "astroStderrBounded": true,
+    "codeServerStdoutBounded": true,
+    "codeServerStderrBounded": true
+  },
+  "idempotentUp": {
+    "httpStatus": 200,
+    "changed": false,
+    "requestDurationMs": 159,
+    "provisionCheckDurationMs": 58,
+    "astroPidBefore": 155,
+    "astroPidAfter": 155,
+    "codeServerPidBefore": 260,
+    "codeServerPidAfter": 260
+  },
+  "proxy": {
+    "previewHttp": {
+      "status": 200,
+      "marker": "Demo Runway",
+      "markerFound": true
+    },
+    "editorHttp": {
+      "status": 200
+    },
+    "previewWebSocket": {
+      "status": 101,
+      "protocol": "vite-hmr",
+      "connectedFrame": true,
+      "fullReloadFrame": true
+    },
+    "editorWebSocket": {
+      "verified": false,
+      "reason": "Raw curl probe timed out without a handshake; production browser verification remains required."
+    }
+  },
+  "down": {
+    "first": {
+      "httpStatus": 200,
+      "changed": true,
+      "phase": "idle",
+      "requestDurationMs": 225
+    },
+    "second": {
+      "httpStatus": 200,
+      "changed": false,
+      "phase": "idle"
+    }
+  },
+  "cleanup": {
+    "sandboxDestroyed": true,
+    "wranglerStopped": true,
+    "residualProxyStopped": true,
+    "matchingRunningContainers": 0
+  },
+  "limitations": [
+    "Local Wrangler uses plain HTTP rather than edge TLS.",
+    "Cloudflare Custom Domain DNS and certificates were not created.",
+    "Cloudflare Access was not configured by this ticket.",
+    "The account still requires Workers Paid Containers entitlement for a remote run.",
+    "The code-server browser WebSocket and browser-originated save were not observed.",
+    "Uncommitted workspace preservation is owned by a later safety ticket."
+  ]
+}
