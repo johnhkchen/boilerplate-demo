@@ -5,13 +5,22 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { listEntries, saveEntry } from '../src/lib/backstage-store.ts';
+import {
+  deleteEntry,
+  listEntries,
+  saveEntry,
+  setEntryCompletion,
+} from '../src/lib/backstage-store.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
-// Exercise the module against the COMMITTED migration, not a copy — so the schema,
-// column names, mapping, and CHECK under test are the real ones T-003-01-01 shipped.
-const MIGRATION_SQL = readFileSync(
+// Exercise the module against the COMMITTED migrations, not copies — so the schema,
+// column names, mapping, and CHECK under test are the real ones the store uses.
+const MIGRATION_0001_SQL = readFileSync(
   join(here, '..', 'migrations', '0001_create_backstage_entries.sql'),
+  'utf8',
+);
+const MIGRATION_0002_SQL = readFileSync(
+  join(here, '..', 'migrations', '0002_add_backstage_entry_completion.sql'),
   'utf8',
 );
 
@@ -20,7 +29,8 @@ const MIGRATION_SQL = readFileSync(
 // uses (prepare -> bind -> run/all), backed by an in-memory database.
 function createEntryStore() {
   const db = new DatabaseSync(':memory:');
-  db.exec(MIGRATION_SQL);
+  db.exec(MIGRATION_0001_SQL);
+  db.exec(MIGRATION_0002_SQL);
   return {
     prepare(sql) {
       const stmt = db.prepare(sql);
@@ -48,6 +58,12 @@ const entry = (over = {}) => ({
   ...over,
 });
 
+const persisted = (id, value, completedAt = null) => ({
+  id,
+  ...value,
+  completedAt,
+});
+
 test('a single entry round-trips byte-for-byte through the store', async () => {
   const store = createEntryStore();
   const one = entry();
@@ -55,7 +71,8 @@ test('a single entry round-trips byte-for-byte through the store', async () => {
   await saveEntry(store, one);
   const read = await listEntries(store);
 
-  assert.deepStrictEqual(read, [one]);
+  assert.deepStrictEqual(read, [persisted(1, one)]);
+  assert.deepStrictEqual(await listEntries(store), read, 'the assigned id is stable');
 });
 
 test('multiple entries come back in insertion order (id ASC)', async () => {
@@ -66,7 +83,11 @@ test('multiple entries come back in insertion order (id ASC)', async () => {
 
   for (const e of [a, b, c]) await saveEntry(store, e);
 
-  assert.deepStrictEqual(await listEntries(store), [a, b, c]);
+  assert.deepStrictEqual(await listEntries(store), [
+    persisted(1, a),
+    persisted(2, b),
+    persisted(3, c),
+  ]);
 });
 
 test('hard content — newlines, Unicode, quotes, query strings — survives exactly', async () => {
@@ -80,7 +101,7 @@ test('hard content — newlines, Unicode, quotes, query strings — survives exa
   await saveEntry(store, gnarly);
   const [read] = await listEntries(store);
 
-  assert.deepStrictEqual(read, gnarly);
+  assert.deepStrictEqual(read, persisted(1, gnarly));
   // Explicit byte assertions so a silent normalization would be obvious.
   assert.equal(read.text, gnarly.text);
   assert.equal(read.url, gnarly.url);
@@ -96,7 +117,7 @@ test('both entry types persist with their discriminator intact', async () => {
 
   const read = await listEntries(store);
   assert.deepStrictEqual(read.map((e) => e.type), ['reference', 'feedback']);
-  assert.deepStrictEqual(read, [ref, fb]);
+  assert.deepStrictEqual(read, [persisted(1, ref), persisted(2, fb)]);
 });
 
 test('equal timestamps and duplicate url/text are all kept, ordered by insertion', async () => {
@@ -109,7 +130,7 @@ test('equal timestamps and duplicate url/text are all kept, ordered by insertion
 
   const read = await listEntries(store);
   assert.equal(read.length, 2);
-  assert.deepStrictEqual(read, [first, second]);
+  assert.deepStrictEqual(read, [persisted(1, first), persisted(2, second)]);
 });
 
 test('an empty store lists as [] (not null/undefined)', async () => {
@@ -117,14 +138,78 @@ test('an empty store lists as [] (not null/undefined)', async () => {
   assert.deepStrictEqual(await listEntries(store), []);
 });
 
-test('returned entries expose exactly the four public fields — no id, no submitted_at', async () => {
+test('returned entries expose exactly the six persisted public fields', async () => {
   const store = createEntryStore();
   await saveEntry(store, entry());
 
   const [read] = await listEntries(store);
-  assert.deepStrictEqual(Object.keys(read).sort(), ['submittedAt', 'text', 'type', 'url']);
-  assert.equal('id' in read, false);
+  assert.deepStrictEqual(Object.keys(read).sort(), [
+    'completedAt',
+    'id',
+    'submittedAt',
+    'text',
+    'type',
+    'url',
+  ]);
+  assert.equal(read.id, 1);
+  assert.equal(read.completedAt, null);
   assert.equal('submitted_at' in read, false);
+  assert.equal('completed_at' in read, false);
+});
+
+test('setEntryCompletion sets and clears exactly the addressed row', async () => {
+  const store = createEntryStore();
+  const a = entry({ text: 'first' });
+  const b = entry({ text: 'second' });
+  const c = entry({ text: 'third' });
+  for (const value of [a, b, c]) await saveEntry(store, value);
+
+  const before = await listEntries(store);
+  const completedAt = '2026-07-11T20:15:30.000Z';
+
+  assert.equal(await setEntryCompletion(store, 2, completedAt), true);
+  assert.deepStrictEqual(await listEntries(store), [
+    before[0],
+    { ...before[1], completedAt },
+    before[2],
+  ]);
+
+  assert.equal(await setEntryCompletion(store, 2, null), true);
+  assert.deepStrictEqual(await listEntries(store), before);
+});
+
+test('setEntryCompletion returns false for an unknown id and changes nothing', async () => {
+  const store = createEntryStore();
+  await saveEntry(store, entry());
+  const before = await listEntries(store);
+
+  assert.equal(
+    await setEntryCompletion(store, 999, '2026-07-11T20:15:30.000Z'),
+    false,
+  );
+  assert.deepStrictEqual(await listEntries(store), before);
+});
+
+test('deleteEntry removes exactly the addressed row and preserves siblings', async () => {
+  const store = createEntryStore();
+  const a = entry({ text: 'first' });
+  const b = entry({ text: 'second' });
+  const c = entry({ text: 'third' });
+  for (const value of [a, b, c]) await saveEntry(store, value);
+  await setEntryCompletion(store, 3, '2026-07-11T20:15:30.000Z');
+  const before = await listEntries(store);
+
+  assert.equal(await deleteEntry(store, 2), true);
+  assert.deepStrictEqual(await listEntries(store), [before[0], before[2]]);
+});
+
+test('deleteEntry returns false for an unknown id and changes nothing', async () => {
+  const store = createEntryStore();
+  await saveEntry(store, entry());
+  const before = await listEntries(store);
+
+  assert.equal(await deleteEntry(store, 999), false);
+  assert.deepStrictEqual(await listEntries(store), before);
 });
 
 test('an out-of-contract type is rejected by the store and nothing is written', async () => {

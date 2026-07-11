@@ -10,18 +10,23 @@ import { readBackstageFeed } from '../src/lib/backstage-retrieval.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// Exercise the seam against the COMMITTED migration and a REAL SQLite store (the engine
+// Exercise the seam against the COMMITTED migrations and a REAL SQLite store (the engine
 // D1 runs on), so "byte-for-byte against the store" is literal — the retrieved payload is
 // compared to rows that actually went through the same schema, CHECK, and column mapping a
 // live submission would. Mirrors test/backstage-store.test.mjs's store helper.
-const MIGRATION_SQL = readFileSync(
+const MIGRATION_0001_SQL = readFileSync(
   join(here, '..', 'migrations', '0001_create_backstage_entries.sql'),
+  'utf8',
+);
+const MIGRATION_0002_SQL = readFileSync(
+  join(here, '..', 'migrations', '0002_add_backstage_entry_completion.sql'),
   'utf8',
 );
 
 function createEntryStore() {
   const db = new DatabaseSync(':memory:');
-  db.exec(MIGRATION_SQL);
+  db.exec(MIGRATION_0001_SQL);
+  db.exec(MIGRATION_0002_SQL);
   return {
     prepare(sql) {
       const stmt = db.prepare(sql);
@@ -140,6 +145,7 @@ test('the feed envelope is a stable, versioned shape and never exposes id', asyn
     'url',
   ]);
   assert.equal('id' in body.entries[0], false);
+  assert.equal('completedAt' in body.entries[0], false);
 });
 
 test('a missing passcode is rejected (401) and no entries are listed', async () => {

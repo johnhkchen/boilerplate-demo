@@ -10,18 +10,23 @@ import { handleBackstageEntry } from '../src/lib/backstage-route.ts';
 import { PASSCODE_HEADER } from '../src/lib/passcode.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const MIGRATION_SQL = readFileSync(
+const MIGRATION_0001_SQL = readFileSync(
   join(here, '..', 'migrations', '0001_create_backstage_entries.sql'),
+  'utf8',
+);
+const MIGRATION_0002_SQL = readFileSync(
+  join(here, '..', 'migrations', '0002_add_backstage_entry_completion.sql'),
   'utf8',
 );
 const SECRET = 'open-the-backstage-door';
 const ROUTE_URL = 'https://demo.example/api/backstage/entries';
 
 // Keep the route test honest: this is real SQLite running the committed D1
-// migration, surfaced through exactly the small D1 API production code consumes.
+// migrations, surfaced through exactly the small D1 API production code consumes.
 function createEntryStore(t) {
   const db = new DatabaseSync(':memory:');
-  db.exec(MIGRATION_SQL);
+  db.exec(MIGRATION_0001_SQL);
+  db.exec(MIGRATION_0002_SQL);
   t.after(() => db.close());
 
   return {
@@ -92,7 +97,9 @@ test('valid passcode + well-formed payload returns 201 and round-trips through t
 
   // Read through the production mapper, proving route -> INSERT -> SELECT and
   // every canonical response field agree byte-for-byte.
-  assert.deepStrictEqual(await listEntries(store), [body.entry]);
+  assert.deepStrictEqual(await listEntries(store), [
+    { id: 1, ...body.entry, completedAt: null },
+  ]);
 });
 
 test('feedback may omit a page URL by sending the empty string', async (t) => {
@@ -107,7 +114,9 @@ test('feedback may omit a page URL by sending the empty string', async (t) => {
   assert.equal(response.status, 201);
   const { entry } = await response.json();
   assert.equal(entry.url, '');
-  assert.deepStrictEqual(await listEntries(store), [entry]);
+  assert.deepStrictEqual(await listEntries(store), [
+    { id: 1, ...entry, completedAt: null },
+  ]);
 });
 
 test('wrong passcode is 403 and writes nothing', async (t) => {

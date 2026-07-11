@@ -18,7 +18,10 @@
 // retrieval.test.mjs) can import this core under `node --experimental-strip-types`,
 // exactly as backstage-store.test.mjs imports the store.
 
-import type { NewBackstageEntry } from './backstage-entry.ts';
+import type {
+  BackstageEntry,
+  NewBackstageEntry,
+} from './backstage-entry.ts';
 import type { EntryStoreDatabase } from './backstage-store.ts';
 import { listEntries } from './backstage-store.ts';
 import { GATE_NAME, guardPasscode } from './passcode.ts';
@@ -27,10 +30,10 @@ import { GATE_NAME, guardPasscode } from './passcode.ts';
 // (repo idiom: integration-check.ts's report carries `schemaVersion: 1`).
 export const FEED_SCHEMA_VERSION = 1 as const;
 
-// The verbatim feed payload. Until T-008-02-01 publishes persisted management
-// state, `entries` remains exactly the existing four-field `listEntries()` output,
-// oldest-first with no value transformed. Success and failure share the recognizable
-// `gate` field (denials carry `{ gate, error, detail }`).
+// Until T-008-02-01 publishes persisted management state, `entries` remains the
+// existing four-field feed shape, oldest-first with no content value transformed.
+// Success and failure share the recognizable `gate` field (denials carry
+// `{ gate, error, detail }`).
 export interface BackstageFeed {
   schemaVersion: typeof FEED_SCHEMA_VERSION;
   gate: typeof GATE_NAME;
@@ -57,6 +60,18 @@ function json(body: unknown, status: number): Response {
   });
 }
 
+// The store now returns the complete persisted contract. Publication of id and
+// completion belongs to T-008-02-01, so keep that staged protocol boundary explicit
+// in one temporary mapper that the follow-up ticket can remove.
+function toCurrentFeedEntry(entry: BackstageEntry): NewBackstageEntry {
+  return {
+    type: entry.type,
+    url: entry.url,
+    text: entry.text,
+    submittedAt: entry.submittedAt,
+  };
+}
+
 // The one composition an agent hits. Order of checks is deliberate:
 //   1. Gate first. A denial (500 misconfigured / 401 missing / 403 mismatch) short-
 //      circuits with the gate's own Response, before the store is ever touched.
@@ -81,7 +96,7 @@ export async function readBackstageFeed(
     );
   }
 
-  const entries = await listEntries(input.db);
+  const entries = (await listEntries(input.db)).map(toCurrentFeedEntry);
   const feed: BackstageFeed = {
     schemaVersion: FEED_SCHEMA_VERSION,
     gate: GATE_NAME,
