@@ -7,7 +7,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs test/promote.test.mjs",
+    "test": "node --experimental-strip-types --test test/operation-runner.test.mjs test/ops-check.test.mjs test/fault.test.mjs test/leak-check.test.mjs test/integration-check.test.mjs test/passcode.test.mjs test/backstage-store.test.mjs test/backstage-route.test.mjs test/backstage-retrieval.test.mjs test/promote.test.mjs test/session-image-check.test.mjs",
     "ops:check": "node --experimental-strip-types scripts/ops-check.ts",
     "leak:check": "node --experimental-strip-types scripts/leak-check.ts",
     "integration:check": "node --experimental-strip-types scripts/integration-check.ts",
@@ -17,6 +17,11 @@
     "test:flow:backstage": "playwright test --project=backstage",
     "worker:types": "wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false",
     "worker:types:check": "wrangler types worker-configuration.d.ts --env-interface CloudflareEnv --include-runtime=false --strict-vars=false --check",
+    "session:types": "wrangler types worker-configuration.sessions.d.ts --config wrangler.sessions.jsonc --env-interface SessionWorkerEnv --include-runtime=false --strict-vars=false",
+    "session:types:check": "wrangler types worker-configuration.sessions.d.ts --config wrangler.sessions.jsonc --env-interface SessionWorkerEnv --include-runtime=false --strict-vars=false --check",
+    "session:validate": "npm run session:types:check && tsc --noEmit && wrangler deploy --dry-run --config wrangler.sessions.jsonc",
+    "session:image:build": "docker build --platform linux/amd64 --file Dockerfile.session --tag demo-runway-session:local .",
+    "session:image:check": "node --experimental-strip-types scripts/session-image-check.ts",
     "typecheck": "astro check && tsc --noEmit && npm run worker:types:check",
     "verify": "npm test && npm run typecheck && npm run integration:check && npm run test:flow:backstage && npm run deploy:dry",
     "dev": "astro dev",
@@ -27,6 +32,9 @@
     "deploy:dry": "astro build && wrangler deploy --dry-run",
     "promote": "node --experimental-strip-types scripts/promote.ts",
     "rollback": "node --experimental-strip-types scripts/rollback.ts"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "0.12.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

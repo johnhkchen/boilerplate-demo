@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:1
+
+# Sandbox 0.12.3 currently publishes the Cloudflare runtime for linux/amd64.
+# Pin both stages to that deployment architecture so an arm64 development host
+# cannot accidentally copy an incompatible Node binary into the final image.
+ARG SESSION_PLATFORM=linux/amd64
+FROM --platform=${SESSION_PLATFORM} node:24.18.0-bookworm-slim AS node-runtime
+
+FROM --platform=${SESSION_PLATFORM} docker.io/cloudflare/sandbox:0.12.3 AS sandbox-runtime
+
+ARG CODE_SERVER_VERSION=4.127.0
+ARG CODE_SERVER_SHA256_AMD64=2684cd3237181d837e8fe8757d98096e2d050a7d1687ee68ac39dd45a7a100d9
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# COPY merges directories. Remove the base image's older npm tree first so
+# files from two npm releases cannot coexist under /usr/local/lib/node_modules.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+    /usr/local/bin/npm /usr/local/bin/npx
+COPY --from=node-runtime /usr/local/ /usr/local/
+
+RUN test "$(node --version)" = "v24.18.0"
+
+# The standalone editor release is verified against the SHA-256 digest
+# published in the GitHub release metadata.
+RUN set -eux; \
+    test "$(dpkg --print-architecture)" = "amd64"; \
+    archive="code-server-${CODE_SERVER_VERSION}-linux-amd64.tar.gz"; \
+    curl --fail --silent --show-error --location \
+      "https://github.com/coder/code-server/releases/download/v${CODE_SERVER_VERSION}/${archive}" \
+      --output "/tmp/${archive}"; \
+    echo "${CODE_SERVER_SHA256_AMD64}  /tmp/${archive}" | sha256sum --check --strict; \
+    mkdir -p /opt/code-server; \
+    tar --extract --gzip --file "/tmp/${archive}" --directory /opt/code-server \
+      --strip-components=1; \
+    ln -s /opt/code-server/bin/code-server /usr/local/bin/code-server; \
+    rm "/tmp/${archive}"; \
+    test "$(code-server --version | tail -n 1 | awk '{print $1}')" = "${CODE_SERVER_VERSION}"
+
+FROM sandbox-runtime AS project-input
+
+WORKDIR /opt/demo-runway
+
+# Keep locked dependencies in a cacheable layer. A cold session never waits on
+# npm registry access for the image's matching revision.
+COPY package.json package-lock.json ./
+
+FROM project-input AS session-runtime
+
+RUN npm ci && npm cache clean --force
+
+# Explicit copies are a second boundary after .dockerignore: secrets, Git data,
+# local Wrangler state, and ticket artifacts cannot enter the final image.
+COPY astro.config.mjs tsconfig.json wrangler.jsonc wrangler.sessions.jsonc ./
+COPY worker-configuration.d.ts worker-configuration.sessions.d.ts ./
+COPY src/ ./src/
+COPY migrations/ ./migrations/
+COPY scripts/ ./scripts/
+
+RUN test "$(node --version)" = "v24.18.0" \
+    && test "$(code-server --version | tail -n 1 | awk '{print $1}')" = "${CODE_SERVER_VERSION}" \
+    && test -d node_modules/astro \
+    && test -f src/pages/index.astro
+
+WORKDIR /workspace
+
+# Wrangler local port forwarding requires explicit declarations. The later
+# lifecycle ticket starts Astro and code-server through the Sandbox API.
+EXPOSE 4321 8080

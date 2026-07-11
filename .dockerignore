@@ -1,0 +1,25 @@
+# Source-control and local orchestration state
+.git
+.gitignore
+.lisa*
+docs
+
+# Secrets and Cloudflare/deployment state never enter Docker context
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+.wrangler
+.promote
+
+# Host dependencies and generated output are rebuilt in the image
+node_modules
+dist
+.astro
+test-results
+playwright-report
+worker-startup.cpuprofile
+
+# Local editor/OS state
+.DS_Store
+docs/.obsidian
