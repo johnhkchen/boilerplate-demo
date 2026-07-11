@@ -1,0 +1,78 @@
+
+==> Pass 1 — leak scan (each pattern must have ZERO matches)
+  [clean] /RDSPI/
+  [clean] /[Ll]isa/
+  [clean] /\bVend\b/
+  [clean] /docs/active/
+  [clean] /\b[TSE]-0[0-9]/
+  [clean] /\b[Dd]rills?\b/
+  [clean] /\b[Rr]ehearsals?\b/
+  [clean] /\b[Tt]ickets?\b/
+  [clean] /\b[Ss]tory\b/
+  [clean] /\b[Ss]tories\b/
+  [clean] /\b[Ee]pics?\b/
+  [clean] /\b[Ss]corecard\b/
+
+==> Pass 2 — seam presence (each string must appear in the runbook)
+  [present] wrangler.jsonc
+  [present] wrangler.sessions.jsonc
+  [present] test/promote.test.mjs
+  [present] migrations/0001_create_backstage_entries.sql
+  [present] src/lib/session-lifecycle.ts
+  [present] src/lib/backstage-store.ts
+  [present] .dev.vars
+  [present] routes
+  [present] database_id
+  [present] SESSION_DOMAIN
+  [present] SESSION_REPOSITORY_URL
+  [present] SESSION_COORDINATOR
+  [present] BACKSTAGE_DB
+  [present] DEMO_SIGNING_KEY
+  [present] DEMO_PASSCODE
+  [present] SESSION_RUNTIME_SECRETS
+  [present] SESSION_ACCESS_TEAM_DOMAIN
+  [present] SESSION_ACCESS_PREVIEW_AUD
+  [present] SESSION_ACCESS_EDITOR_AUD
+  [present] CLOUDFLARE_API_TOKEN
+  [present] CLOUDFLARE_ACCOUNT_ID
+  [present] deploy:dry
+  [present] session:validate
+  [present] integration:check
+  [present] ops:check
+  [present] leak:check
+  [present] test:flow:backstage
+  [present] DEMO_BASE_URL
+  [present] PLAYWRIGHT_BASE_URL
+
+==> Pass 3 — seam reality (cited files/keys/scripts resolve in the tree)
+  [exists] wrangler.jsonc
+  [exists] wrangler.sessions.jsonc
+  [exists] test/promote.test.mjs
+  [exists] migrations/0001_create_backstage_entries.sql
+  [exists] src/lib/session-lifecycle.ts
+  [exists] src/lib/backstage-store.ts
+  [exists] .gitignore rule for .dev.vars
+  [key ok] wrangler.jsonc : "routes"
+  [key ok] wrangler.jsonc : "database_id"
+  [key ok] wrangler.jsonc : "BACKSTAGE_DB"
+  [key ok] wrangler.jsonc : DEMO_SIGNING_KEY
+  [key ok] wrangler.jsonc : DEMO_PASSCODE
+  [key ok] wrangler.sessions.jsonc : "routes"
+  [key ok] wrangler.sessions.jsonc : "SESSION_DOMAIN"
+  [key ok] wrangler.sessions.jsonc : "SESSION_REPOSITORY_URL"
+  [key ok] wrangler.sessions.jsonc : SESSION_COORDINATOR
+  [key ok] wrangler.sessions.jsonc : SESSION_RUNTIME_SECRETS
+  [key ok] wrangler.sessions.jsonc : SESSION_ACCESS_TEAM_DOMAIN
+  [key ok] wrangler.sessions.jsonc : SESSION_ACCESS_PREVIEW_AUD
+  [key ok] wrangler.sessions.jsonc : SESSION_ACCESS_EDITOR_AUD
+  [key ok] test/promote.test.mjs : demo.b28.dev
+  [script ok] deploy
+  [script ok] deploy:dry
+  [script ok] session:validate
+  [script ok] integration:check
+  [script ok] ops:check
+  [script ok] leak:check
+  [script ok] test:flow:backstage
+
+==> Verdict
+  PASS — runbook is leak-clean and every cited seam is real
