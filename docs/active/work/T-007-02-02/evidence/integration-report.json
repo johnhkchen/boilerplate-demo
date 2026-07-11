@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "outcome": "passed",
+  "mode": "scrubbed-local-simulation",
+  "checks": [
+    {
+      "check": "operation",
+      "outcome": "passed",
+      "exitCode": 0
+    },
+    {
+      "check": "flow",
+      "outcome": "passed",
+      "exitCode": 0
+    },
+    {
+      "check": "leak",
+      "outcome": "passed",
+      "exitCode": 0
+    }
+  ]
+}

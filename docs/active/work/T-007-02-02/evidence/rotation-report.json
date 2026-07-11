@@ -1,0 +1,111 @@
+{
+  "ticket": "T-007-02-02",
+  "outcome": "passed",
+  "mode": "scrubbed-local-simulation",
+  "configuration": {
+    "outcome": "passed",
+    "ownerZone": "new-owner.example",
+    "repositoryUrl": "https://github.com/new-owner/demo-runway.git",
+    "inventories": {
+      "appBindings": [
+        "DEMO_PASSCODE",
+        "DEMO_SIGNING_KEY"
+      ],
+      "sessionBindings": [
+        "SESSION_ACCESS_EDITOR_AUD",
+        "SESSION_ACCESS_PREVIEW_AUD",
+        "SESSION_ACCESS_TEAM_DOMAIN",
+        "SESSION_RUNTIME_SECRETS"
+      ],
+      "ciBindings": [
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_API_TOKEN"
+      ]
+    },
+    "activeAuthorMarkers": [],
+    "placeholders": []
+  },
+  "contracts": {
+    "runtimeApiKeys": [
+      "NEW_OWNER_DEMO_API_KEY"
+    ],
+    "accessConfiguration": "accepted",
+    "passcode": "accepted-and-wrong-value-rejected"
+  },
+  "secrets": [
+    {
+      "name": "DEMO_PASSCODE",
+      "store": "app-worker",
+      "fingerprint": "sha256:e93ac78bba8b",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "DEMO_SIGNING_KEY",
+      "store": "app-worker",
+      "fingerprint": "sha256:743a10a222df",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "SESSION_ACCESS_EDITOR_AUD",
+      "store": "sessions-worker",
+      "fingerprint": "sha256:30faa2fe3953",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "SESSION_ACCESS_PREVIEW_AUD",
+      "store": "sessions-worker",
+      "fingerprint": "sha256:8e9a132fc8c0",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "SESSION_ACCESS_TEAM_DOMAIN",
+      "store": "sessions-worker",
+      "fingerprint": "sha256:905fce0cd0e5",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "SESSION_RUNTIME_SECRETS",
+      "store": "sessions-worker",
+      "fingerprint": "sha256:487c84ccb33d",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "CLOUDFLARE_ACCOUNT_ID",
+      "store": "github-actions",
+      "fingerprint": "sha256:0d07116e613a",
+      "contract": "passed",
+      "installation": "simulated"
+    },
+    {
+      "name": "CLOUDFLARE_API_TOKEN",
+      "store": "github-actions",
+      "fingerprint": "sha256:26ea00767c1b",
+      "contract": "passed",
+      "installation": "simulated"
+    }
+  ],
+  "authorSecretProvenance": "absent-from-clean-source",
+  "exactValueScan": {
+    "outcome": "passed",
+    "findings": []
+  },
+  "liveStores": [
+    {
+      "store": "cloudflare-workers",
+      "state": "deferred-live",
+      "reason": "no genuine new-owner Cloudflare authority or target account supplied"
+    },
+    {
+      "store": "github-actions",
+      "state": "deferred-live",
+      "reason": "no genuine new-owner GitHub repository authority supplied"
+    }
+  ],
+  "nonRotatableGaps": []
+}
