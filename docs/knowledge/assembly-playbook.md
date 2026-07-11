@@ -19,10 +19,15 @@ Preparation is its own lifecycle phase (`docs/knowledge/product-spec.md`),
 not part of Day 1. Arrive with:
 
 - dependencies installed: `npm install` and `npx playwright install chromium`
-  (`docs/knowledge/integration-check.md`, prerequisites);
+  (`docs/knowledge/integration-check.md`, prerequisites). If your environment
+  blocks npm postinstall scripts, approve them for `workerd`, `sharp`, and
+  `esbuild` — with them blocked, the build may pass while `wrangler` cannot
+  start;
 - the board initialized: the project owner has run `lisa init` then
   `vend init` (`docs/knowledge/vend-workflow.md`), so `docs/active/demand.md`
-  exists and is empty of template history;
+  exists and is empty of template history. A project that is a *copy* rather
+  than freshly generated has no board at all — create `docs/active/demand.md`
+  yourself before the event, or Step 12 has nowhere to write;
 - the one-time deploy bootstrap done or ready to run: authenticate with
   `npx wrangler whoami`, create the Worker with `npm run deploy`, set both
   runtime secrets with `npx wrangler secret put DEMO_SIGNING_KEY` and
@@ -30,7 +35,12 @@ not part of Day 1. Arrive with:
   `npx wrangler d1 migrations apply BACKSTAGE_DB --remote`, and store CI
   credentials with `gh secret set CLOUDFLARE_API_TOKEN` and
   `gh secret set CLOUDFLARE_ACCOUNT_ID`. The full sequence, with the DNS
-  caveats, is `docs/knowledge/deployment.md`.
+  caveats, is `docs/knowledge/deployment.md`. Deploy identity is
+  per-project: the Worker name, route, and D1 database id in `wrangler.jsonc`
+  belong to *this* project's deployment, so only a freshly generated project
+  runs the bootstrap as-is. A copied project must first rename the Worker,
+  provision its own D1, and take a `*.workers.dev` host — or must not deploy
+  (a collision-free bootstrap for copies is a demand-board signal).
 
 ## Beat 1 — Intake
 
@@ -58,8 +68,14 @@ name is a sign you are improvising; stop and look again.
 Temporary credentials never enter the repository, a browser bundle, a
 backstage entry, or chat. Locally: copy `.dev.vars.example` to `.dev.vars`
 and put values there (gitignored). Production: `npx wrangler secret put`,
-interactive and non-echoing. The backstage door refuses secrets by policy —
-direct collaborators to a separate secure exchange
+interactive and non-echoing. A **new** credential — one the template does not
+already ship — needs one more move: declare it in `wrangler.jsonc`
+(`secrets.required`) first. The dev runtime builds its bindings from the
+declarations and silently drops any `.dev.vars` key that lacks one, so an
+undeclared token surfaces only as `boundary_misconfigured` at the boundary.
+Declare it, then supply the value locally in `.dev.vars` and in production
+via `npx wrangler secret put <NAME>`. The backstage door refuses secrets by
+policy — direct collaborators to a separate secure exchange
 (`docs/knowledge/backstage-retrieval-seam.md`).
 
 ### Step 3. Write the intake statement
@@ -68,7 +84,10 @@ One short written statement, before any code: the **demo moment** (the single
 thing the audience must see work), stakeholders, references, providers,
 personas, unknowns, and the acceptance evidence you will show. This is the
 structured intake the product spec calls for, and it is what you point the
-coding agent at alongside the sponsor references.
+coding agent at alongside the sponsor references. A sponsor packet that
+already ships this statement (as the sample fixture's `core-moment.md` does)
+substitutes for writing one — verify it names the moment, the unknowns, and
+the acceptance evidence rather than re-deriving it.
 
 Depth: `docs/knowledge/product-spec.md` (inputs, intake, Day-1 lifecycle).
 
@@ -78,8 +97,12 @@ Depth: `docs/knowledge/product-spec.md` (inputs, intake, Day-1 lifecycle).
 
 Deploy the still-generic site through the bootstrap above (or push `main` if
 CI is already wired) and share two links with the team now: the public URL
-and the repository. Teammates and their agents branch and contribute from
-minute one; stakeholders get the backstage link (`src/pages/backstage.astro`)
+and the repository. This assumes a freshly generated project — from a copied
+one, `npm run deploy` unchanged overwrites the source project's live Worker
+(see the deploy-identity caveat in the bootstrap above); rename and provision
+first, or defer going public. Teammates and their agents branch and
+contribute from minute one; stakeholders get the backstage link
+(`src/pages/backstage.astro`)
 and the shared Day-1 passcode. Public-before-deep-ideation is invariant P1
 (`docs/knowledge/charter.md`) — the deploy is the first step of the play,
 not its finale.
@@ -89,14 +112,20 @@ not its finale.
 The audience page announces itself through template slots in
 `src/pages/index.astro`: `DEMO_NAME` and `PRIMARY_ACTION_LABEL`. The
 Playwright contract pins that label as the accessible name
-`PRIMARY_ACTION_NAME` in `tests/support/flow-contract.ts`. Rename all of them
-in the same change, or `npm run test:flow` fails on the named activation
-step — that legible failure is the contract enforcing itself.
+`PRIMARY_ACTION_NAME` in `tests/support/flow-contract.ts`. One label lives
+outside the contract today: `tests/demo-flow.spec.ts` asserts the page
+heading by its literal accessible name, so it is the fourth rename target
+(centralizing it behind a flow-contract constant is a demand-board signal).
+Rename all of them in the same change, or `npm run test:flow` fails on the
+named step — that legible failure is the contract enforcing itself.
 
 ### Step 6. Prove failure legibility before real credentials
 
 Before wiring the sponsor API, watch the harness catch a broken and a stalled
-boundary while everything is still fake and cheap:
+boundary while everything is still fake and cheap. (These are the first
+commands that spin the dev server — if you are working inside a coding-agent
+session, read the session-pressure caveat opening Beat 3 first, or the
+evidence below may be false.)
 
 ```sh
 DEMO_FAULT=broken npm run integration:check
@@ -123,14 +152,31 @@ speculative providers, no framework additions without an idea-driven reason
 (charter N5). What the slice does is the idea's business; that it cannot hang
 silently is the template's.
 
+One honest boundary the dry run surfaced: the *checks* in Beat 3 are still
+bound to the receipt exemplar — `scripts/integration-check.ts` probes
+`/api/receipt`, `src/lib/ops-check.ts` asserts the receipt's response shape,
+and `leak:check` guards `DEMO_SIGNING_KEY`. After replacing the slice, rewire
+those three at your boundary (its path, its expected shape, its secret) or
+Step 8 validates the exemplar you just removed. A harness that follows the
+replaced slice from config is a demand-board signal.
+
 Depth: `docs/knowledge/charter.md` (P1, P2, guardrails);
 `docs/knowledge/product-spec.md` (integration harness seams).
 
 ## Beat 3 — Check
 
 The agent runs the checks and reads the evidence before any human is asked to
-find a bug (`docs/knowledge/charter.md`, guardrails). Escalate scope in
-order:
+find a bug (`docs/knowledge/charter.md`, guardrails).
+
+**Session-pressure caveat.** Inside a coding-agent session, Astro detects the
+agent and daemonizes `astro dev`; a stale daemon holding its own per-run
+signing key can answer the probes, and every mode — healthy included — then
+reports false evidence. Before trusting red *or* green, run
+`npx astro dev stop` and strip the agent markers from the environment, or run
+the checks in a clean shell. (Teaching the harness to neutralize all agent
+markers itself is a demand-board signal.)
+
+Escalate scope in order:
 
 ### Step 8. Local gate
 
@@ -234,6 +280,8 @@ proves it is *working and observable* so the human judges the right thing.
 - **Not a provider cookbook.** Per charter N2, this play prescribes seams and
   sequence only; provider-specific recipes wait for repeated evidence across
   events.
-- **Not yet rehearsed live.** The dry run of this playbook against the
-  sample sponsor packet (`test/fixtures/sponsor-packet/`) is its own story
-  (S-006-02); until then, treat rough edges as signals for the board.
+- **Rehearsed against the fixture, not yet live.** The dry run against the
+  sample sponsor packet (`test/fixtures/sponsor-packet/`) ran on 2026-07-11
+  (S-006-02) and its frictions are folded into this text; the live-sponsor,
+  public-deploy rehearsal under real event pressure has not happened. Treat
+  remaining rough edges as signals for the board.
