@@ -5,12 +5,16 @@
 // passes it in, so this module stays unit-testable against any store that speaks the
 // small D1 surface below.
 //
-// Two mapping duties, pinned by the T-003-01-01 contract:
+// Two legacy mapping duties, pinned by the T-003-01-01 contract until the
+// management projection lands in T-008-01-02:
 //   * physical `submitted_at` (snake_case) <-> public `submittedAt` (camelCase);
-//   * the storage-private `id` column is never part of a returned entry.
+//   * the existing four-field read omits persistence-owned state.
 // Both live in exactly one place (rowToEntry) so they cannot drift.
 
-import type { BackstageEntry, BackstageEntryType } from './backstage-entry.ts';
+import type {
+  BackstageEntryType,
+  NewBackstageEntry,
+} from './backstage-entry.ts';
 
 // The minimal slice of the D1 API this module uses. Real `D1Database` is structurally
 // assignable to `EntryStoreDatabase` (it has `prepare`; its statement has `bind`/`run`/
@@ -28,8 +32,8 @@ export interface EntryStoreDatabase {
   prepare(query: string): EntryStoreStatement;
 }
 
-// The physical row as D1 returns it: snake_case columns, and only the public ones —
-// `id` is deliberately not selected, so it is absent here too.
+// The current four-field projection as D1 returns it. T-008-01-02 adds the
+// settled persisted fields (`id`, `completed_at`) to this row and its mapper.
 interface EntryRow {
   type: string;
   url: string;
@@ -52,7 +56,7 @@ const LIST_ENTRIES_SQL =
 // The single place the snake_case->camelCase mapping and the drop-`id` rule live.
 // Builds a fresh object with exactly the four contract fields, so no physical column
 // name and no private id can escape into public output.
-function rowToEntry(row: EntryRow): BackstageEntry {
+function rowToEntry(row: EntryRow): NewBackstageEntry {
   return {
     type: row.type as BackstageEntryType,
     url: row.url,
@@ -61,12 +65,13 @@ function rowToEntry(row: EntryRow): BackstageEntry {
   };
 }
 
-// Persist one entry. Trusts a well-typed `BackstageEntry` (payload validation is the
-// HTTP edge's job, T-003-02-01); the migration's CHECK on `type` remains the engine
-// backstop and surfaces as a rejected write rather than being swallowed here.
+// Persist one insert-ready entry. Payload validation is the HTTP edge's job
+// (T-003-02-01); D1 assigns the id and migration 0002 leaves completion null.
+// The migration's CHECK on `type` remains the engine backstop and surfaces as a
+// rejected write rather than being swallowed here.
 export async function saveEntry(
   db: EntryStoreDatabase,
-  entry: BackstageEntry,
+  entry: NewBackstageEntry,
 ): Promise<void> {
   await db
     .prepare(INSERT_ENTRY_SQL)
@@ -79,7 +84,7 @@ export async function saveEntry(
 // the zero-placeholder query.
 export async function listEntries(
   db: EntryStoreDatabase,
-): Promise<BackstageEntry[]> {
+): Promise<NewBackstageEntry[]> {
   const { results } = await db.prepare(LIST_ENTRIES_SQL).bind().all<EntryRow>();
   return results.map(rowToEntry);
 }

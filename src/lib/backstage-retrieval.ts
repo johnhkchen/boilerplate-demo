@@ -18,7 +18,7 @@
 // retrieval.test.mjs) can import this core under `node --experimental-strip-types`,
 // exactly as backstage-store.test.mjs imports the store.
 
-import type { BackstageEntry } from './backstage-entry.ts';
+import type { NewBackstageEntry } from './backstage-entry.ts';
 import type { EntryStoreDatabase } from './backstage-store.ts';
 import { listEntries } from './backstage-store.ts';
 import { GATE_NAME, guardPasscode } from './passcode.ts';
@@ -27,15 +27,15 @@ import { GATE_NAME, guardPasscode } from './passcode.ts';
 // (repo idiom: integration-check.ts's report carries `schemaVersion: 1`).
 export const FEED_SCHEMA_VERSION = 1 as const;
 
-// The verbatim feed payload. `entries` is exactly `listEntries()` output — the four
-// public contract fields, oldest-first (id ASC), with no `id` and no value transformed —
-// so byte-for-byte fidelity is preserved through the envelope. Success and failure share
-// the recognizable `gate` field (denials carry `{ gate, error, detail }`).
+// The verbatim feed payload. Until T-008-02-01 publishes persisted management
+// state, `entries` remains exactly the existing four-field `listEntries()` output,
+// oldest-first with no value transformed. Success and failure share the recognizable
+// `gate` field (denials carry `{ gate, error, detail }`).
 export interface BackstageFeed {
   schemaVersion: typeof FEED_SCHEMA_VERSION;
   gate: typeof GATE_NAME;
   count: number;
-  entries: BackstageEntry[];
+  entries: NewBackstageEntry[];
 }
 
 // Everything the seam needs, injected — no env read here.

@@ -1,11 +1,12 @@
 // The untrusted, client-owned half of a backstage entry. A submission deliberately
 // omits `submittedAt`: the HTTP edge stamps accepted input with server time before it
-// becomes the canonical BackstageEntry persisted by backstage-store.ts.
+// becomes the insert-ready entry persisted by backstage-store.ts. The database
+// then supplies the stable id and initial completion state.
 
 import {
   BACKSTAGE_ENTRY_TYPES,
-  type BackstageEntry,
   type BackstageEntryType,
+  type NewBackstageEntry,
 } from './backstage-entry.ts';
 
 export const MAX_BACKSTAGE_URL_LENGTH = 2_048;
@@ -106,7 +107,7 @@ export function validateBackstageSubmission(
 export function toBackstageEntry(
   submission: BackstageSubmission,
   submittedAt: string,
-): BackstageEntry {
+): NewBackstageEntry {
   return {
     type: submission.type,
     url: submission.url,
