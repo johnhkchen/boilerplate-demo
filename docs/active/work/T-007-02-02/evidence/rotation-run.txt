@@ -47,9 +47,9 @@ Using secrets defined in process.env
 
 
 
- prerendering static routes 
-00:22:33   ├─ /backstage/index.html (+9ms) 
-00:22:33   ├─ /index.html (+6ms) 
+ prerendering static routes
+00:22:33   ├─ /backstage/index.html (+9ms)
+00:22:33   ├─ /index.html (+6ms)
 00:22:33 ✓ Completed in 157ms.
 
 00:22:33 [build] Rearranging server assets...

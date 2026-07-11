@@ -197,7 +197,7 @@ log "  passed: existing ops/flow/leak commands exited zero against the generated
 
 log "stage 6/6: write redacted evidence and scan every exact value"
 cp "$INTEGRATION_TMP" "$EVIDENCE_DIR/integration-report.json"
-cat "$PRIVATE_DIR/integration-run.txt" >> "$RUN_TMP"
+sed 's/[[:space:]]*$//' "$PRIVATE_DIR/integration-run.txt" >> "$RUN_TMP"
 "${VERIFY[@]}" --mode report > "$EVIDENCE_DIR/rotation-report.json"
 "${VERIFY[@]}" --mode scan > "$EVIDENCE_DIR/exact-secret-scan.txt"
 {
