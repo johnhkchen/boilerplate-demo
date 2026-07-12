@@ -1,10 +1,12 @@
-import { BOUNDARY_NAME } from './receipt.ts';
-
 export const INTEGRATION_CHECKS = ['operation', 'flow', 'leak'] as const;
 
 export type IntegrationCheckName = (typeof INTEGRATION_CHECKS)[number];
 export type IntegrationOutcome = 'passed' | 'failed';
 export type IntegrationCheckOutcome = 'passed' | 'failed' | 'skipped';
+
+export interface BoundaryIdentity {
+  name: string;
+}
 
 export interface CommandEvidence {
   exitCode: number;
@@ -19,7 +21,7 @@ export type IntegrationCommandRunner = (
 
 export interface IntegrationCheckResult {
   check: IntegrationCheckName;
-  boundary: typeof BOUNDARY_NAME;
+  boundary: string;
   outcome: IntegrationCheckOutcome;
   durationMs: number;
   exitCode?: number;
@@ -82,6 +84,7 @@ function elapsedSince(startedAtMs: number): number {
 }
 
 export async function runIntegrationChecks(
+  boundary: BoundaryIdentity,
   options: RunIntegrationChecksOptions,
 ): Promise<IntegrationRunResult> {
   validateBudget(options.timeBudgetMs);
@@ -116,7 +119,7 @@ export async function runIntegrationChecks(
       if (controller.signal.aborted) {
         checks.push({
           check,
-          boundary: BOUNDARY_NAME,
+          boundary: boundary.name,
           outcome: 'skipped',
           durationMs: 0,
           failureKind: 'overall-timeout',
@@ -142,7 +145,7 @@ export async function runIntegrationChecks(
         timedOut = true;
         checks.push({
           check,
-          boundary: BOUNDARY_NAME,
+          boundary: boundary.name,
           outcome: 'failed',
           durationMs: elapsedSince(checkStartedAt),
           failureKind: 'overall-timeout',
@@ -157,7 +160,7 @@ export async function runIntegrationChecks(
           : String(settled.reason);
         checks.push({
           check,
-          boundary: BOUNDARY_NAME,
+          boundary: boundary.name,
           outcome: 'failed',
           durationMs: elapsedSince(checkStartedAt),
           failureKind: 'execution',
@@ -169,7 +172,7 @@ export async function runIntegrationChecks(
       const { evidence } = settled;
       checks.push({
         check,
-        boundary: BOUNDARY_NAME,
+        boundary: boundary.name,
         outcome: evidence.exitCode === 0 ? 'passed' : 'failed',
         durationMs: evidence.durationMs,
         exitCode: evidence.exitCode,

@@ -14,6 +14,7 @@ import {
   formatIntegrationSummary,
   runIntegrationChecks,
 } from '../src/lib/integration-check.ts';
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 import type {
   CommandEvidence,
   IntegrationCheckName,
@@ -371,7 +372,7 @@ async function main(): Promise<number> {
 
     server = await startServer(config, temporary.path, controller.signal);
 
-    const result = await runIntegrationChecks({
+    const result = await runIntegrationChecks(receiptBoundary, {
       timeBudgetMs: config.timeBudgetMs,
       startedAtMs,
       signal: controller.signal,

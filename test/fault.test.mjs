@@ -8,6 +8,7 @@ import {
 } from '../src/lib/fault.ts';
 import { makeReceipt, verifyReceipt, BOUNDARY_NAME } from '../src/lib/receipt.ts';
 import { runBoundaryCheck } from '../src/lib/ops-check.ts';
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 
 const KEY = 'test-signing-key';
 const URL = 'http://127.0.0.1:4321/api/receipt';
@@ -77,7 +78,7 @@ test('broken server → ops-check reports a failed operation naming the boundary
   // The exact bytes a DEMO_FAULT=broken boundary would serve.
   const brokenBody = corruptSignature(await makeReceipt(KEY));
 
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY, // the out-of-band key the check holds (as `.dev.vars` provides locally)

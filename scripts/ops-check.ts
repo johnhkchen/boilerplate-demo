@@ -12,6 +12,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 import { runBoundaryCheck, formatBoundaryTrace } from '../src/lib/ops-check.ts';
 
 // Default to the demo's own dev server, using the exact host Astro advertises
@@ -71,7 +72,7 @@ async function main(): Promise<number> {
 
   let result;
   try {
-    result = await runBoundaryCheck(config);
+    result = await runBoundaryCheck(receiptBoundary, config);
   } catch (err) {
     // runOperation rejects (TypeError/RangeError) only for an invalid check
     // config — a bad budget, not a boundary failure. Keep that distinct.

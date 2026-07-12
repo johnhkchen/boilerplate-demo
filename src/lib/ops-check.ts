@@ -1,19 +1,18 @@
-// The first directly-invokable traced operation: it runs the exemplar boundary
-// (src/pages/api/receipt.ts, logic in src/lib/receipt.ts) through the operation
-// runner (src/lib/operation-runner.ts) and reports readable pass/fail evidence.
+// The first directly-invokable traced operation: it runs a declared boundary
+// through the operation runner (src/lib/operation-runner.ts) and reports readable
+// pass/fail evidence.
 // This is the seam that turns "the integration works" from an assumption into a
 // green check — reachable, correctly shaped, and (when a key is held out-of-band)
 // signed by the real server secret.
 //
-// Pure and framework-free, matching receipt.ts / operation-runner.ts: no env, no
-// argv, no stdout, no process.exit, no file reads. `fetch` is injectable so the
+// Pure and framework-free: no env, no argv, no stdout, no process.exit, no file
+// reads. `fetch` is injectable so the
 // whole thing is unit-testable with a stub. The thin CLI (scripts/ops-check.ts)
 // owns all I/O and the exit code.
 
 import { runOperation } from './operation-runner.ts';
 import type { OperationResult } from './operation-runner.ts';
-import { BOUNDARY_NAME, verifyReceipt } from './receipt.ts';
-import type { Receipt } from './receipt.ts';
+import type { BoundaryContract } from './boundary-contract.ts';
 
 export interface BoundaryCheckConfig {
   // Full URL of the boundary, e.g. http://127.0.0.1:4321/api/receipt.
@@ -28,49 +27,28 @@ export interface BoundaryCheckConfig {
   fetchImpl?: typeof fetch;
 }
 
-export interface BoundaryCheckValue {
-  receipt: Receipt;
+export interface BoundaryCheckValue<Body> {
+  body: Body;
   // True only when a key was provided AND the signature verified against it.
   signatureVerified: boolean;
 }
 
 // The runner's own discriminated result, specialized to this operation's value.
-export type BoundaryCheckResult = OperationResult<BoundaryCheckValue>;
-
-// Narrow untrusted JSON to a Receipt. Throws (→ a stack-free operation failure via
-// the runner) on anything that isn't this boundary's shape, so a bare 200 with the
-// wrong body never passes as "the integration works".
-function assertReceiptShape(body: unknown): Receipt {
-  if (typeof body !== 'object' || body === null) {
-    throw new Error('unexpected response shape from the boundary');
-  }
-  const r = body as Record<string, unknown>;
-  const stringFields = ['boundary', 'issuedAt', 'nonce', 'signature'] as const;
-  for (const field of stringFields) {
-    if (typeof r[field] !== 'string' || (r[field] as string) === '') {
-      throw new Error('unexpected response shape from the boundary');
-    }
-  }
-  if (r.boundary !== BOUNDARY_NAME) {
-    throw new Error(
-      `boundary named "${String(r.boundary)}", expected "${BOUNDARY_NAME}"`,
-    );
-  }
-  return body as Receipt;
-}
+export type BoundaryCheckResult<Body> = OperationResult<BoundaryCheckValue<Body>>;
 
 // Run the boundary through the runner. Always settles — on success a passed trace
-// carrying the validated receipt, on any error/timeout a failed trace whose
-// operationName is BOUNDARY_NAME (so the boundary is named even when the server is
-// down and there is no response to inspect).
-export async function runBoundaryCheck(
+// carrying the validated body, on any error/timeout a failed trace whose
+// operationName comes from the contract (so the boundary is named even when the
+// server is down and there is no response to inspect).
+export async function runBoundaryCheck<Body>(
+  contract: BoundaryContract<Body>,
   config: BoundaryCheckConfig,
-): Promise<BoundaryCheckResult> {
+): Promise<BoundaryCheckResult<Body>> {
   const doFetch = config.fetchImpl ?? fetch;
   const hasKey = typeof config.key === 'string' && config.key !== '';
 
-  return runOperation<BoundaryCheckValue>({
-    name: BOUNDARY_NAME,
+  return runOperation<BoundaryCheckValue<Body>>({
+    name: contract.name,
     timeBudgetMs: config.timeBudgetMs,
     invoke: async ({ signal }) => {
       // A down server rejects here (ECONNREFUSED); a stalled one is aborted by the
@@ -85,17 +63,17 @@ export async function runBoundaryCheck(
         throw new Error(`boundary answered HTTP ${res.status}`);
       }
 
-      const receipt = assertReceiptShape(await res.json());
+      const body = contract.assertShape(await res.json());
 
       if (hasKey) {
-        const ok = await verifyReceipt(config.key as string, receipt);
+        const ok = await contract.verify(config.key as string, body);
         if (!ok) {
           throw new Error('signature did not verify against the out-of-band key');
         }
-        return { receipt, signatureVerified: true };
+        return { body, signatureVerified: true };
       }
 
-      return { receipt, signatureVerified: false };
+      return { body, signatureVerified: false };
     },
   });
 }
@@ -108,19 +86,19 @@ function roundMs(n: number): string {
 // A stack-free, human-readable summary of a settled result. Pure string — the CLI
 // prints it and chooses the exit code from result.trace.outcome. Plain English by
 // brand voice: no jargon.
-export function formatBoundaryTrace(result: BoundaryCheckResult): string {
+export function formatBoundaryTrace<Body>(
+  result: BoundaryCheckResult<Body>,
+): string {
   const { trace } = result;
   const ms = roundMs(trace.durationMs);
 
   if (trace.outcome === 'passed' && 'value' in result) {
-    const { receipt, signatureVerified } = result.value;
+    const { signatureVerified } = result.value;
     const signatureLine = signatureVerified
       ? 'signature   verified against the out-of-band key'
       : 'signature   present, not checked — no key available';
     return [
       `✓ ${trace.operationName} — passed in ${ms} ms`,
-      `    issued at   ${receipt.issuedAt}`,
-      `    one-time    ${receipt.nonce}`,
       `    ${signatureLine}`,
     ].join('\n');
   }

@@ -6,6 +6,7 @@ import {
   formatIntegrationSummary,
   runIntegrationChecks,
 } from '../src/lib/integration-check.ts';
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 
 const evidence = (exitCode, output = '') => ({
   exitCode,
@@ -15,7 +16,7 @@ const evidence = (exitCode, output = '') => ({
 
 test('healthy run executes all checks in order and aggregates to passed', async () => {
   const calls = [];
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks({ name: 'parcel' }, {
     timeBudgetMs: 1_000,
     runner: async (check) => {
       calls.push(check);
@@ -26,6 +27,11 @@ test('healthy run executes all checks in order and aggregates to passed', async 
   assert.deepEqual(calls, ['operation', 'flow', 'leak']);
   assert.equal(result.outcome, 'passed');
   assert.equal(result.timedOut, false);
+  assert.deepEqual(result.checks.map((check) => check.boundary), [
+    'parcel',
+    'parcel',
+    'parcel',
+  ]);
   assert.deepEqual(result.checks.map((check) => check.outcome), [
     'passed',
     'passed',
@@ -35,7 +41,7 @@ test('healthy run executes all checks in order and aggregates to passed', async 
 
 test('ordinary failure does not short-circuit later checks', async () => {
   const calls = [];
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 1_000,
     runner: async (check) => {
       calls.push(check);
@@ -58,7 +64,7 @@ test('normalizes operation, flow, and leak failure kinds', async () => {
     flow: 'Timeout 4000ms exceeded while awaiting receipt',
     leak: '✗ leak check — secret reached 1 browser surface',
   };
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 1_000,
     runner: async (check) => evidence(1, outputs[check]),
   });
@@ -70,7 +76,7 @@ test('normalizes operation, flow, and leak failure kinds', async () => {
 });
 
 test('generic flow failure and unavailable leak evidence stay distinct', async () => {
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 1_000,
     runner: async (check) => {
       if (check === 'flow') return evidence(1, 'browser exited unexpectedly');
@@ -85,7 +91,7 @@ test('generic flow failure and unavailable leak evidence stay distinct', async (
 
 test('runner rejection becomes execution evidence and later checks still run', async () => {
   const calls = [];
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 1_000,
     runner: async (check) => {
       calls.push(check);
@@ -104,7 +110,7 @@ test(
   { timeout: 1_000 },
   async () => {
     const started = performance.now();
-    const result = await runIntegrationChecks({
+    const result = await runIntegrationChecks(receiptBoundary, {
       timeBudgetMs: 30,
       runner: () => new Promise(() => {}),
     });
@@ -127,7 +133,7 @@ test(
 
 test('an already-consumed setup budget skips all checks without invoking runner', async () => {
   let calls = 0;
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 10,
     startedAtMs: performance.now() - 50,
     runner: async () => {
@@ -143,7 +149,7 @@ test('an already-consumed setup budget skips all checks without invoking runner'
 });
 
 test('formatter names the boundary, failure kind, outcome, and budget', async () => {
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 1_000,
     runner: async (check) =>
       check === 'flow'
@@ -160,7 +166,7 @@ test('formatter names the boundary, failure kind, outcome, and budget', async ()
 
 test('report carries normalized metadata and redacts the supplied secret', async () => {
   const secret = 'ticket-secret-marker';
-  const result = await runIntegrationChecks({
+  const result = await runIntegrationChecks(receiptBoundary, {
     timeBudgetMs: 1_000,
     runner: async (check) =>
       check === 'leak'
@@ -189,7 +195,7 @@ test('invalid overall budgets reject before invoking the runner', async () => {
 
   for (const timeBudgetMs of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
     await assert.rejects(
-      runIntegrationChecks({ timeBudgetMs, runner }),
+      runIntegrationChecks(receiptBoundary, { timeBudgetMs, runner }),
       /positive finite/,
     );
   }

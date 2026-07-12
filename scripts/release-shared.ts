@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 import { runBoundaryCheck, formatBoundaryTrace } from '../src/lib/ops-check.ts';
 import {
   extractCustomDomain,
@@ -117,7 +118,7 @@ export function resolveHostname(): string | undefined {
 // The same receipt boundary check the release docs prescribe, keyless (the
 // production signing key is deliberately out-of-band).
 export async function receiptCheck(baseUrl: string): Promise<boolean> {
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: `${baseUrl}/api/receipt`,
     timeBudgetMs: 10_000,
   });

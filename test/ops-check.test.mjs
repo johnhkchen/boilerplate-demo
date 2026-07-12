@@ -5,6 +5,7 @@ import {
   runBoundaryCheck,
   formatBoundaryTrace,
 } from '../src/lib/ops-check.ts';
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 import { makeReceipt, BOUNDARY_NAME } from '../src/lib/receipt.ts';
 
 const KEY = 'test-signing-key';
@@ -24,7 +25,7 @@ const fetchReturning = (response) => async () => response;
 test('healthy demo with a valid key → passed trace naming the boundary + latency', async () => {
   const receipt = await makeReceipt(KEY);
 
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -38,12 +39,12 @@ test('healthy demo with a valid key → passed trace naming the boundary + laten
   assert.equal('value' in result, true);
   if ('value' in result) {
     assert.equal(result.value.signatureVerified, true);
-    assert.equal(result.value.receipt.boundary, BOUNDARY_NAME);
+    assert.equal(result.value.body.boundary, BOUNDARY_NAME);
   }
 });
 
 test('server down (fetch rejects) → failed operation trace still naming the boundary', async () => {
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -69,7 +70,7 @@ test(
   async () => {
     const startedAt = performance.now();
 
-    const result = await runBoundaryCheck({
+    const result = await runBoundaryCheck(receiptBoundary, {
       url: URL,
       timeBudgetMs: 40,
       key: KEY,
@@ -91,7 +92,7 @@ test(
 test('receipt signed with a different key → failed (signature does not verify)', async () => {
   const receipt = await makeReceipt(OTHER_KEY);
 
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -107,7 +108,7 @@ test('receipt signed with a different key → failed (signature does not verify)
 });
 
 test('non-ok HTTP status → failed, message names the status', async () => {
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -127,7 +128,7 @@ test('non-ok HTTP status → failed, message names the status', async () => {
 });
 
 test('unexpected body shape → failed (does not pass on any 200)', async () => {
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -143,7 +144,7 @@ test('unexpected body shape → failed (does not pass on any 200)', async () => 
 test('no out-of-band key → still passes on a well-formed receipt, marked unverified', async () => {
   const receipt = await makeReceipt(KEY);
 
-  const result = await runBoundaryCheck({
+  const result = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     // key omitted
@@ -160,7 +161,7 @@ test('no out-of-band key → still passes on a well-formed receipt, marked unver
 test('formatBoundaryTrace renders readable, stack-free lines for pass and fail', async () => {
   const receipt = await makeReceipt(KEY);
 
-  const passed = await runBoundaryCheck({
+  const passed = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -171,7 +172,7 @@ test('formatBoundaryTrace renders readable, stack-free lines for pass and fail',
   assert.match(passText, /passed in/);
   assert.doesNotMatch(passText, /\n\s+at /); // no stack frames
 
-  const failed = await runBoundaryCheck({
+  const failed = await runBoundaryCheck(receiptBoundary, {
     url: URL,
     timeBudgetMs: 1_000,
     key: KEY,
@@ -184,4 +185,68 @@ test('formatBoundaryTrace renders readable, stack-free lines for pass and fail',
   assert.match(failText, /failed in/);
   assert.match(failText, /\[operation\]/);
   assert.doesNotMatch(failText, /\n\s+at /);
+});
+
+test('alternate contract controls name, shape, and signature verification', async () => {
+  const alternateContract = {
+    name: 'parcel',
+    path: '/api/parcel',
+    keyEnv: 'PARCEL_KEY',
+    assertShape(body) {
+      if (
+        typeof body !== 'object' ||
+        body === null ||
+        body.boundary !== 'parcel' ||
+        typeof body.proof !== 'number'
+      ) {
+        throw new Error('unexpected parcel shape');
+      }
+      return body;
+    },
+    async verify(key, body) {
+      return body.proof === key.length;
+    },
+    landmark: {
+      heading: 'Parcel Desk',
+      statusSelector: '#parcel-status',
+      bodySelector: '#parcel-body',
+      evidence: [],
+      primaryActionName: 'Open parcel',
+    },
+  };
+
+  const valid = await runBoundaryCheck(alternateContract, {
+    url: 'http://127.0.0.1:4321/api/parcel',
+    timeBudgetMs: 1_000,
+    key: 'four',
+    fetchImpl: fetchReturning(responseOf({ boundary: 'parcel', proof: 4 })),
+  });
+  assert.equal(valid.trace.outcome, 'passed');
+  assert.equal(valid.trace.operationName, 'parcel');
+  if ('value' in valid) {
+    assert.deepEqual(valid.value.body, { boundary: 'parcel', proof: 4 });
+    assert.equal(valid.value.signatureVerified, true);
+  }
+
+  const wrongShape = await runBoundaryCheck(alternateContract, {
+    url: 'http://127.0.0.1:4321/api/parcel',
+    timeBudgetMs: 1_000,
+    key: 'four',
+    fetchImpl: fetchReturning(responseOf({ boundary: 'receipt', proof: 4 })),
+  });
+  assert.equal(wrongShape.trace.outcome, 'failed');
+  if (wrongShape.trace.outcome === 'failed') {
+    assert.match(wrongShape.trace.failure.message, /parcel shape/);
+  }
+
+  const badSignature = await runBoundaryCheck(alternateContract, {
+    url: 'http://127.0.0.1:4321/api/parcel',
+    timeBudgetMs: 1_000,
+    key: 'four',
+    fetchImpl: fetchReturning(responseOf({ boundary: 'parcel', proof: 3 })),
+  });
+  assert.equal(badSignature.trace.outcome, 'failed');
+  if (badSignature.trace.outcome === 'failed') {
+    assert.match(badSignature.trace.failure.message, /signature/i);
+  }
 });
