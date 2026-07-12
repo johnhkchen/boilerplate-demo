@@ -3,20 +3,21 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
+import { receiptBoundary } from '../src/lib/boundary-contract.ts';
 import { formatLeakCheck, runLeakCheck } from '../src/lib/leak-check.ts';
 
 const DEFAULT_BASE_URL = 'http://localhost:4321';
 const DEFAULT_BUNDLE_DIR = 'dist';
 const DEFAULT_TIME_BUDGET_MS = 2_000;
 
-function readDevVarsKey(path: string): string | undefined {
+function readDevVarsKey(path: string, keyEnv: string): string | undefined {
   try {
     if (!existsSync(path)) return undefined;
     for (const rawLine of readFileSync(path, 'utf8').split('\n')) {
       const line = rawLine.trim();
       if (line === '' || line.startsWith('#')) continue;
       const eq = line.indexOf('=');
-      if (eq === -1 || line.slice(0, eq).trim() !== 'DEMO_SIGNING_KEY') continue;
+      if (eq === -1 || line.slice(0, eq).trim() !== keyEnv) continue;
       let value = line.slice(eq + 1).trim();
       if (
         (value.startsWith('"') && value.endsWith('"')) ||
@@ -37,8 +38,12 @@ function resolveConfig() {
   return {
     bundleDir: process.env.LEAK_CHECK_DIR ?? DEFAULT_BUNDLE_DIR,
     responseUrl:
-      process.env.LEAK_CHECK_URL ?? `${baseUrl.replace(/\/$/, '')}/api/receipt`,
-    secret: process.env.DEMO_SIGNING_KEY ?? readDevVarsKey('.dev.vars') ?? '',
+      process.env.LEAK_CHECK_URL ??
+      `${baseUrl.replace(/\/$/, '')}${receiptBoundary.path}`,
+    secret:
+      process.env[receiptBoundary.keyEnv] ??
+      readDevVarsKey('.dev.vars', receiptBoundary.keyEnv) ??
+      '',
     timeBudgetMs:
       process.env.LEAK_CHECK_TIMEOUT_MS === undefined
         ? DEFAULT_TIME_BUDGET_MS

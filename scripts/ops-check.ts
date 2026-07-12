@@ -25,11 +25,11 @@ import { runBoundaryCheck, formatBoundaryTrace } from '../src/lib/ops-check.ts';
 const DEFAULT_BASE_URL = 'http://localhost:4321';
 const DEFAULT_TIME_BUDGET_MS = 2_000;
 
-// Read DEMO_SIGNING_KEY from a .dev.vars file so a plain local run verifies the
-// signature against the same key the running dev server uses — no extra setup.
+// Read the declared signing key from a .dev.vars file so a plain local run
+// verifies the signature against the same key the running dev server uses.
 // Tolerant by design: a missing file or any parse trouble simply means "no key",
 // and the check runs without out-of-band verification rather than erroring.
-function readDevVarsKey(path: string): string | undefined {
+function readDevVarsKey(path: string, keyEnv: string): string | undefined {
   try {
     if (!existsSync(path)) return undefined;
     for (const rawLine of readFileSync(path, 'utf8').split('\n')) {
@@ -38,7 +38,7 @@ function readDevVarsKey(path: string): string | undefined {
       const eq = line.indexOf('=');
       if (eq === -1) continue;
       const name = line.slice(0, eq).trim();
-      if (name !== 'DEMO_SIGNING_KEY') continue;
+      if (name !== keyEnv) continue;
       let value = line.slice(eq + 1).trim();
       if (
         (value.startsWith('"') && value.endsWith('"')) ||
@@ -56,13 +56,17 @@ function readDevVarsKey(path: string): string | undefined {
 
 function resolveConfig() {
   const baseUrl = process.env.DEMO_BASE_URL ?? DEFAULT_BASE_URL;
-  const url = process.env.OPS_CHECK_URL ?? `${baseUrl}/api/receipt`;
+  const url =
+    process.env.OPS_CHECK_URL ??
+    `${baseUrl.replace(/\/$/, '')}${receiptBoundary.path}`;
 
   const budgetRaw = process.env.OPS_CHECK_TIMEOUT_MS;
   const timeBudgetMs =
     budgetRaw === undefined ? DEFAULT_TIME_BUDGET_MS : Number(budgetRaw);
 
-  const key = process.env.DEMO_SIGNING_KEY ?? readDevVarsKey('.dev.vars');
+  const key =
+    process.env[receiptBoundary.keyEnv] ??
+    readDevVarsKey('.dev.vars', receiptBoundary.keyEnv);
 
   return { url, timeBudgetMs, key };
 }

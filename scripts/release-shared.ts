@@ -119,7 +119,7 @@ export function resolveHostname(): string | undefined {
 // production signing key is deliberately out-of-band).
 export async function receiptCheck(baseUrl: string): Promise<boolean> {
   const result = await runBoundaryCheck(receiptBoundary, {
-    url: `${baseUrl}/api/receipt`,
+    url: `${baseUrl}${receiptBoundary.path}`,
     timeBudgetMs: 10_000,
   });
   console.log(formatBoundaryTrace(result));
@@ -155,7 +155,7 @@ export async function verifyHostname(
 ): Promise<boolean> {
   const budgetMs = Number(process.env.PROMOTE_VERIFY_TIMEOUT_MS ?? 30_000);
   const intervalMs = 3_000;
-  const url = `https://${hostname}/api/receipt`;
+  const url = `https://${hostname}${receiptBoundary.path}`;
   const deadline = Date.now() + budgetMs;
   let lastSeen = 'no response';
   for (;;) {

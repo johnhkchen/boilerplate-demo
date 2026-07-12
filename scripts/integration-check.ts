@@ -15,6 +15,7 @@ import {
   runIntegrationChecks,
 } from '../src/lib/integration-check.ts';
 import { receiptBoundary } from '../src/lib/boundary-contract.ts';
+import type { BoundaryContract } from '../src/lib/boundary-contract.ts';
 import type {
   CommandEvidence,
   IntegrationCheckName,
@@ -38,6 +39,11 @@ interface IntegrationConfig {
   signingKey: string;
 }
 
+type RuntimeBoundary = Pick<
+  BoundaryContract<unknown>,
+  'path' | 'keyEnv'
+>;
+
 interface RunningServer {
   child: ChildProcess;
   output: () => string;
@@ -55,7 +61,7 @@ function positiveNumber(
   return value;
 }
 
-function resolveConfig(): IntegrationConfig {
+function resolveConfig(contract: RuntimeBoundary): IntegrationConfig {
   const timeBudgetMs = positiveNumber(
     process.env.INTEGRATION_CHECK_TIMEOUT_MS,
     DEFAULT_TIME_BUDGET_MS,
@@ -76,7 +82,7 @@ function resolveConfig(): IntegrationConfig {
     port,
     baseUrl: `http://127.0.0.1:${port}`,
     signingKey:
-      process.env.DEMO_SIGNING_KEY ?? randomBytes(24).toString('hex'),
+      process.env[contract.keyEnv] ?? randomBytes(24).toString('hex'),
   };
 }
 
@@ -174,11 +180,12 @@ async function runCommand(
 
 async function createTemporaryConfig(
   config: IntegrationConfig,
+  contract: RuntimeBoundary,
 ): Promise<{ directory: string; path: string }> {
   const directory = await mkdtemp(join(tmpdir(), 'demo-runway-integration-'));
   const path = join(directory, 'wrangler.json');
   const vars: Record<string, string> = {
-    DEMO_SIGNING_KEY: config.signingKey,
+    [contract.keyEnv]: config.signingKey,
   };
   if (config.faultMode !== 'off') vars.DEMO_FAULT = config.faultMode;
 
@@ -308,16 +315,18 @@ async function stopServer(server: RunningServer | undefined): Promise<void> {
 function commandFor(
   check: IntegrationCheckName,
   config: IntegrationConfig,
+  contract: RuntimeBoundary,
 ): { args: string[]; env: NodeJS.ProcessEnv } {
+  const boundaryUrl = `${config.baseUrl}${contract.path}`;
   const shared = {
     ...process.env,
-    DEMO_SIGNING_KEY: config.signingKey,
+    [contract.keyEnv]: config.signingKey,
     DEMO_BASE_URL: config.baseUrl,
   };
   if (check === 'operation') {
     return {
       args: ['run', 'ops:check'],
-      env: { ...shared, OPS_CHECK_URL: `${config.baseUrl}/api/receipt` },
+      env: { ...shared, OPS_CHECK_URL: boundaryUrl },
     };
   }
   if (check === 'flow') {
@@ -328,7 +337,7 @@ function commandFor(
   }
   return {
     args: ['run', 'leak:check'],
-    env: { ...shared, LEAK_CHECK_URL: `${config.baseUrl}/api/receipt` },
+    env: { ...shared, LEAK_CHECK_URL: boundaryUrl },
   };
 }
 
@@ -340,7 +349,7 @@ async function writeReport(report: unknown): Promise<void> {
 async function main(): Promise<number> {
   let config: IntegrationConfig;
   try {
-    config = resolveConfig();
+    config = resolveConfig(receiptBoundary);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`integration check misconfigured: ${message}`);
@@ -358,7 +367,7 @@ async function main(): Promise<number> {
   let server: RunningServer | undefined;
 
   try {
-    temporary = await createTemporaryConfig(config);
+    temporary = await createTemporaryConfig(config, receiptBoundary);
 
     const build = await runCommand('build', ['run', 'build'], {
       env: process.env,
@@ -377,7 +386,7 @@ async function main(): Promise<number> {
       startedAtMs,
       signal: controller.signal,
       runner: async (check, signal) => {
-        const command = commandFor(check, config);
+        const command = commandFor(check, config, receiptBoundary);
         return runCommand(check, command.args, {
           env: command.env,
           signal,
