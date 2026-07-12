@@ -138,6 +138,11 @@ async function startStub(mode, t) {
       response.end('not found');
       return;
     }
+    if (mode === 'missing') {
+      response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+      response.end('not found');
+      return;
+    }
     if (mode === 'stalled') return;
 
     sequence += 1;
@@ -305,6 +310,34 @@ test('an alternate declaration drives unchanged operation, leak, and flow checks
       BOUNDARY_NAME,
     ]);
     assert.ok(result.checks.every((check) => check.outcome === 'passed'));
+  });
+
+  await t.test('missing declared route names operation and flow failures', async (t) => {
+    const root = await createSwapRoot(t);
+    const urls = await startStub('missing', t);
+    const [operation, flow] = await Promise.all([
+      runOperation(root, urls),
+      runFlow(root, urls),
+    ]);
+
+    assert.notEqual(operation.exitCode, 0, operation.output);
+    assert.match(operation.output, /parcel-proof.*\[operation\]/);
+    assert.match(operation.output, /boundary answered HTTP 404/);
+    assert.notEqual(flow.exitCode, 0, flow.output);
+    assert.match(flow.output, /await receipt boundary response/);
+
+    const result = await normalize({ operation, flow });
+    const operationFailure = checkResult(result, 'operation');
+    const flowFailure = checkResult(result, 'flow');
+    assert.equal(result.outcome, 'failed');
+    assert.equal(operationFailure.boundary, BOUNDARY_NAME);
+    assert.equal(operationFailure.failureKind, 'operation');
+    assert.equal(flowFailure.boundary, BOUNDARY_NAME);
+    assert.equal(flowFailure.failureKind, 'timeout');
+
+    const summary = formatIntegrationSummary(result);
+    assert.match(summary, /parcel-proof \[operation\]/);
+    assert.match(summary, /parcel-proof \[timeout\]/);
   });
 
   await t.test('broken alternate boundary names an operation failure', async (t) => {
