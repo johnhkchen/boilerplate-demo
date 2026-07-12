@@ -1,10 +1,22 @@
 import { expect, test } from '@playwright/test';
 import {
+  DEMO_FLOW_BOUNDARY,
+  DEMO_HEADING,
   FLOW_BUDGET_MS,
   FLOW_PROJECT,
   FLOW_STEP,
   PRIMARY_ACTION_NAME,
 } from './support/flow-contract';
+
+const { landmark } = DEMO_FLOW_BOUNDARY;
+
+function requireFreshnessEvidence() {
+  const evidence = landmark.evidence[0];
+  if (!evidence) {
+    throw new Error('the demo flow boundary must declare freshness evidence');
+  }
+  return evidence;
+}
 
 // Two projects share this spec, one test each (the guards skip the other):
 //   healthy — the signed receipt renders, and the labeled primary action responds
@@ -29,7 +41,7 @@ test('main demo flow renders the signed receipt', async ({ page }, testInfo) => 
       // commit keeps a deliberately stalled fetch out of this document-load step;
       // the heading proves the static HTML parsed before the named receipt wait.
       await page.goto('/', { waitUntil: 'commit' });
-      await expect(page.getByRole('heading', { name: 'Demo Runway' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: DEMO_HEADING })).toBeVisible();
     },
     { box: true, timeout: FLOW_BUDGET_MS.action },
   );
@@ -38,12 +50,16 @@ test('main demo flow renders the signed receipt', async ({ page }, testInfo) => 
     FLOW_STEP.awaitReceipt,
     async () => {
       await expect(
-        page.locator('#receipt-body'),
+        page.locator(landmark.bodySelector),
         'await receipt boundary response: signed receipt should become visible',
       ).toBeVisible();
-      await expect(page.locator('#receipt-status')).toBeHidden();
-      await expect(page.locator('#receipt-nonce')).toHaveText(/^[0-9a-f]{32}$/);
-      await expect(page.locator('#receipt-signature')).toHaveText(/^[0-9a-f]{64}$/);
+      await expect(page.locator(landmark.statusSelector)).toBeHidden();
+      for (const evidence of landmark.evidence) {
+        await expect(
+          page.locator(evidence.selector),
+          `${evidence.name} should match the declared evidence format`,
+        ).toHaveText(evidence.pattern);
+      }
     },
     { box: true, timeout: FLOW_BUDGET_MS.receiptStep },
   );
@@ -61,15 +77,20 @@ test('main demo flow renders the signed receipt', async ({ page }, testInfo) => 
       ).toBeVisible();
       await expect(action).toBeEnabled();
 
-      // Each /api/receipt answer mints a fresh nonce, so a changed nonce is the
-      // page-visible proof the activation produced a new server response.
-      const nonceBefore = await page.locator('#receipt-nonce').textContent();
+      // A changed declared evidence value is page-visible proof that activation
+      // produced a new server response.
+      const freshnessEvidence = requireFreshnessEvidence();
+      const evidenceBefore = await page
+        .locator(freshnessEvidence.selector)
+        .textContent();
       await action.click();
       await expect(
-        page.locator('#receipt-nonce'),
-        'activating the primary action should fetch a fresh receipt (new nonce)',
-      ).not.toHaveText(nonceBefore ?? '');
-      await expect(page.locator('#receipt-nonce')).toHaveText(/^[0-9a-f]{32}$/);
+        page.locator(freshnessEvidence.selector),
+        'activating the primary action should produce fresh evidence',
+      ).not.toHaveText(evidenceBefore ?? '');
+      await expect(page.locator(freshnessEvidence.selector)).toHaveText(
+        freshnessEvidence.pattern,
+      );
       await expect(
         action,
         'the action should re-arm once its round trip completes',
@@ -90,7 +111,7 @@ test('the stalled boundary stays narrated and the labeled action still answers',
   // A routed request remains stalled until the handler continues, fulfills, or
   // aborts it. Intentionally do none of those so the real page stays in its
   // loading state for the whole test.
-  await page.route('**/api/receipt', () => {});
+  await page.route(DEMO_FLOW_BOUNDARY.pathGlob, () => {});
 
   await test.step(
     FLOW_STEP.loadDemo,
@@ -98,7 +119,7 @@ test('the stalled boundary stays narrated and the labeled action still answers',
       // Same commit-wait rationale as the healthy flow: the stalled fetch must not
       // count against document load; the heading proves the static shell parsed.
       await page.goto('/', { waitUntil: 'commit' });
-      await expect(page.getByRole('heading', { name: 'Demo Runway' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: DEMO_HEADING })).toBeVisible();
     },
     { box: true, timeout: FLOW_BUDGET_MS.action },
   );
@@ -107,11 +128,11 @@ test('the stalled boundary stays narrated and the labeled action still answers',
     FLOW_STEP.observeStall,
     async () => {
       await expect(
-        page.locator('#receipt-status'),
+        page.locator(landmark.statusSelector),
         'a boundary that never answers should stay narrated, not blank',
       ).toBeVisible();
       await expect(
-        page.locator('#receipt-body'),
+        page.locator(landmark.bodySelector),
         'no receipt may be faked while the boundary is stalled',
       ).toBeHidden();
     },
@@ -137,8 +158,8 @@ test('the stalled boundary stays narrated and the labeled action still answers',
         action,
         'the action should answer its activation even while the boundary hangs',
       ).toBeDisabled();
-      await expect(page.locator('#receipt-status')).toBeVisible();
-      await expect(page.locator('#receipt-body')).toBeHidden();
+      await expect(page.locator(landmark.statusSelector)).toBeVisible();
+      await expect(page.locator(landmark.bodySelector)).toBeHidden();
     },
     { box: true, timeout: FLOW_BUDGET_MS.actionStep },
   );

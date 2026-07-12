@@ -1,3 +1,5 @@
+import { receiptBoundary } from '../../src/lib/boundary-contract.ts';
+
 export const FLOW_PROJECT = {
   healthy: 'healthy',
   stalled: 'stalled',
@@ -6,6 +8,17 @@ export const FLOW_PROJECT = {
   // store and the shared passcode (see playwright.config.ts webServer).
   backstage: 'backstage',
 } as const;
+
+// The browser-facing slice of the exemplar boundary declaration. Playwright's
+// route interception needs an any-origin glob; every page landmark remains the
+// declaration's original value and type.
+export const DEMO_FLOW_BOUNDARY = {
+  pathGlob: `**${receiptBoundary.path}`,
+  landmark: receiptBoundary.landmark,
+} as const;
+
+// Named re-export for the role locator that proves the static page shell parsed.
+export const DEMO_HEADING = DEMO_FLOW_BOUNDARY.landmark.heading;
 
 export const FLOW_STEP = {
   loadDemo: 'load the public demo',
@@ -30,11 +43,10 @@ export const BACKSTAGE_STEP = {
 // drift. This is a local test knock, not a secret.
 export const BACKSTAGE_PASSCODE = 'playwright-backstage-knock';
 
-// The accessible name of the index page's one primary action. Authored in
-// src/pages/index.astro's PRIMARY_ACTION_LABEL template slot; a generated demo that
-// renames the slot must update this const in the same change, or the suite fails on
-// the named activation step — that legible failure is this contract enforcing itself.
-export const PRIMARY_ACTION_NAME = 'Ask for a fresh note';
+// The accessible name of the index page's one primary action, re-exported from
+// the boundary declaration so the named activation step follows one source.
+export const PRIMARY_ACTION_NAME =
+  DEMO_FLOW_BOUNDARY.landmark.primaryActionName;
 
 // Nested budgets keep the most useful failure closest to the cause while outer
 // limits guarantee that setup or teardown cannot leave the whole run hanging.
